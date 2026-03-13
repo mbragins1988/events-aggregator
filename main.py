@@ -11,7 +11,7 @@ logging.basicConfig(
     force=True,
 )
 
-# все logger = logging.getLogger(__name__) используют эти настройки
+# все logger = logging.getLogger(__name__) используют эти настройки.
 logger = logging.getLogger(__name__)
 
 
