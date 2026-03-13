@@ -14,9 +14,11 @@ logging.basicConfig(
 # все logger = logging.getLogger(__name__) используют эти настройки
 logger = logging.getLogger(__name__)
 
+logger.info("Запуск приложения в main")
 
 app = FastAPI(title="Events provider")
 
+logger.info("Запущен app")
 
 @app.get("/")
 async def root():
