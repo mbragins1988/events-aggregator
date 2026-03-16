@@ -10,17 +10,9 @@ class Settings:
 
     # API
     API_TOKEN: str = os.getenv("API_TOKEN", "")
-    SERVICE_URL: str = os.getenv("SERVICE_URL", "")
 
     # Services
-    CATALOG_BASE_URL: str = os.getenv(
-        "CATALOG_BASE_URL", "https://capashino.dev-1.python-labs.ru"
-    )
-
-    # Kafka
-    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv(
-        "KAFKA_BOOTSTRAP_SERVERS", "kafka.kafka.svc.cluster.local:9092"
-    )
+    CATALOG_BASE_URL: str = os.getenv("CATALOG_BASE_URL", "")
 
     @property
     def DATABASE_URL(self) -> str:
