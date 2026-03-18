@@ -24,8 +24,9 @@ class EventRepository:
         query = select(events_tbl)
         
         if date_from:
+            print('events_tbl ----', events_tbl.c.event_time)
             query = query.where(
-                func.date(events_tbl.event_time) >= date_from
+                func.date(events_tbl.c.event_time) >= date_from
             )
         
         query = query.limit(limit).offset(offset)
