@@ -32,14 +32,14 @@ class EventsProviderClient:
             }
         """
         params = {"changed_at": changed_at.isoformat()}
-        
+        url = f"{self._base_url}/api/events/"
         if cursor:
             params["cursor"] = cursor
-        
+        print('--------- self._base_url ---------', url)
         try:
             logger.info("Попытка получения мероприятий на сервисе")
             response = await self._client.get(
-                self._base_url,
+                url,
                 params=params,
                 headers={"x-api-key": self._api_key}
             )
@@ -80,9 +80,10 @@ class EventsProviderClient:
     
     async def get_event(self, event_id: str) -> Optional[Dict[str, Any]]:
         """Получить конкретное событие"""
+        url = f"{self._base_url}/api/events/{event_id}/"
         try:
             response = await self._client.get(
-                f"{self._base_url}/api/events/{event_id}/",
+                url,
                 headers={"x-api-key": self._api_key}
             )
             
@@ -100,9 +101,10 @@ class EventsProviderClient:
     
     async def get_seats(self, event_id: str) -> List[str]:
         """Получить свободные места на событии"""
+        url = f"{self._base_url}/api/events/{event_id}/seats/"
         try:
             response = await self._client.get(
-                f"{self._base_url}/api/events/{event_id}/seats/",
+                url,
                 headers={"x-api-key": self._api_key}
             )
             
@@ -131,9 +133,10 @@ class EventsProviderClient:
         Returns:
             ticket_id или None в случае ошибки
         """
+        url = f"{self._base_url}/api/events/{event_id}/register/"
         try:
             response = await self._client.post(
-                f"{self._base_url}/api/events/{event_id}/register/",
+                url,
                 json={
                     "first_name": first_name,
                     "last_name": last_name,
