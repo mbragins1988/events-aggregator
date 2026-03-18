@@ -7,6 +7,8 @@ from typing import Optional
 class EventStatus(str, Enum):
     NEW = "new"
     PUBLISHED = "published"
+    REGISTRATION_CLOSED = "registration_closed"
+    FINISHED = "finished"
 
 
 class Event:

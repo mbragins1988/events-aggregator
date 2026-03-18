@@ -25,3 +25,6 @@ class Settings:
     def SYNC_DATABASE_URL(self) -> str:
         """Синхронный URL для Alembic"""
         return self.POSTGRES_CONNECTION_STRING.replace("postgres://", "postgresql://")
+
+
+settings = Settings()
