@@ -1,5 +1,3 @@
-# FastAPI эндпоинты. Преобразуют HTTP запросы в вызовы use case и обратно.
-# Получает HTTP запрос. Извлекает параметры (page, page_size). Вызывает GetEventsUseCase
 # app/presentation/api.py
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
@@ -13,6 +11,7 @@ from app.presentation import schemas
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.sync_events import SyncEventsService
+from app.domain.models import EventStatus
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +19,20 @@ router = APIRouter(prefix="/api", tags=["events"])
 
 
 def get_events_usecase(
-    session: AsyncSession = Depends(get_db)  # получаем сессию
+    session: AsyncSession = Depends(get_db)
 ) -> GetEventsUseCase:
-    repo = EventRepository(session)  # передаем сессию в репозиторий
+    repo = EventRepository(session)
     return GetEventsUseCase(repo)
+
+
+def get_event_repository(
+    session: AsyncSession = Depends(get_db)
+) -> EventRepository:
+    return EventRepository(session)
 
 
 @router.get("/events", response_model=schemas.EventsListResponse)
 async def get_events(
-    # Query параметры из запроса
     date_from: Optional[date] = Query(None, description="События после даты"),
     page: int = Query(1, ge=1, description="Номер страницы"),
     page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
@@ -42,14 +46,12 @@ async def get_events(
     - **page_size**: размер страницы (макс 100)
     """
     
-    # Вызываем бизнес-логику
     result = await usecase.execute(
         date_from=date_from,
         page=page,
         page_size=page_size
     )
     
-    # Формируем ссылки для пагинации
     base_url = "/api/events"
     
     def build_url(p: int) -> Optional[str]:
@@ -64,7 +66,6 @@ async def get_events(
         
         return f"{base_url}?{urlencode(params)}"
     
-    # Преобразуем доменные модели в Pydantic схемы для ответа
     events_data = []
     for event in result["events"]:
         events_data.append(schemas.EventResponse(
@@ -87,6 +88,34 @@ async def get_events(
         next=build_url(result["page"] + 1),
         previous=build_url(result["page"] - 1),
         results=events_data
+    )
+
+
+@router.get("/events/{event_id}", response_model=schemas.EventDetailResponse)
+async def get_event(
+    event_id: str,
+    repo: EventRepository = Depends(get_event_repository)
+):
+    event = await repo.get_by_id(event_id)
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Конвертируем Domain model в Pydantic schema для ответа
+    return schemas.EventDetailResponse(
+        id=event.id,
+        name=event.name,
+        place=schemas.PlaceDetailResponse(
+            id=event.place_id,
+            name=event.place_name,
+            city=event.place_city,
+            address=event.place_address,
+            seats_pattern=event.place_seats_pattern
+        ),
+        event_time=event.event_time,
+        registration_deadline=event.registration_deadline,
+        status=event.status.value,
+        number_of_visitors=event.number_of_visitors
     )
 
 

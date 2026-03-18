@@ -20,6 +20,6 @@ app.include_router(router)
 async def root():
     return {"service": "Events Aggregator", "status": "running"}
 
-@app.get("/api/health/")
+@app.get("/api/health")
 async def health():
     return {"status": "ok"}

@@ -1,69 +1,79 @@
-# app/infrastructure/event_repository.py
 from typing import List, Optional
 from datetime import date
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db_schema import events_tbl  # импортируем ORM модель
+from app.infrastructure.db_schema import events_tbl
 from app.domain.models import Event, EventStatus
 
 
 class EventRepository:
     def __init__(self, session: AsyncSession):
-        self.session = session  # получаем сессию
+        self.session = session
     
-    async def get_all(
-        self,
-        date_from: Optional[date] = None,
-        limit: int = 20,
-        offset: int = 0
-    ) -> List[Event]:
-        """Получить события из БД"""
+    async def get_by_id(self, event_id: str) -> Optional[Event]:
+        query = select(events_tbl).where(events_tbl.c.id == event_id)
+        result = await self.session.execute(query)
+        row = result.first()
         
-        # Строим запрос
+        if not row:
+            return None
+        
+        # Конвертируем DB row в Domain model
+        return Event(
+            id=row.id,
+            name=row.name,
+            place_id=row.place_id,
+            place_name=row.place_name,
+            place_city=row.place_city,
+            place_address=row.place_address,
+            place_seats_pattern=row.place_seats_pattern,
+            event_time=row.event_time,
+            registration_deadline=row.registration_deadline,
+            status=EventStatus(row.status),
+            number_of_visitors=row.number_of_visitors,
+            created_at=row.created_at,
+            status_changed_at=row.status_changed_at
+        )
+    
+    async def get_all(self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0) -> List[Event]:
         query = select(events_tbl)
         
         if date_from:
-            print('events_tbl ----', events_tbl.c.event_time)
             query = query.where(
                 func.date(events_tbl.c.event_time) >= date_from
             )
         
         query = query.limit(limit).offset(offset)
-        
-        # Выполняем запрос (ORM стиль)
         result = await self.session.execute(query)
-        db_events = result.scalars().all()  # получаем список ORM моделей
+        rows = result.all()
         
-        # Конвертируем ORM модели в Domain модели
         events = []
-        for db_event in db_events:
-            event = Event(
-                id=db_event.id,
-                name=db_event.name,
-                place_id=db_event.place_id,
-                place_name=db_event.place_name,
-                place_city=db_event.place_city,
-                place_address=db_event.place_address,
-                place_seats_pattern=db_event.place_seats_pattern,
-                event_time=db_event.event_time,
-                registration_deadline=db_event.registration_deadline,
-                status=EventStatus(db_event.status),
-                number_of_visitors=db_event.number_of_visitors,
-                status_changed_at=db_event.status_changed_at
-            )
-            events.append(event)
+        for row in rows:
+            events.append(Event(
+                id=row.id,
+                name=row.name,
+                place_id=row.place_id,
+                place_name=row.place_name,
+                place_city=row.place_city,
+                place_address=row.place_address,
+                place_seats_pattern=row.place_seats_pattern,
+                event_time=row.event_time,
+                registration_deadline=row.registration_deadline,
+                status=EventStatus(row.status),
+                number_of_visitors=row.number_of_visitors,
+                created_at=row.created_at,
+                status_changed_at=row.status_changed_at
+            ))
         
         return events
     
     async def count(self, date_from: Optional[date] = None) -> int:
-        """Посчитать количество событий"""
-        
         query = select(func.count()).select_from(events_tbl)
         
         if date_from:
             query = query.where(
-                func.date(events_tbl.event_time) >= date_from
+                func.date(events_tbl.c.event_time) >= date_from
             )
         
         result = await self.session.execute(query)

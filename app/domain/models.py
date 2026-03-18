@@ -1,24 +1,20 @@
-# Чистые Python классы с бизнес-логикой. Не знают про БД и фреймворки.
+# app/domain/models.py
 from datetime import datetime
-from uuid import UUID
 from enum import Enum
-from pydantic import BaseModel
+from typing import Optional
 
 
 class EventStatus(str, Enum):
-    """Статус события из ТЗ"""
     NEW = "new"
     PUBLISHED = "published"
 
 
-class Event(BaseModel):
-    """Событие - чистая доменная модель"""
-
+class Event:
     def __init__(
         self,
-        id: UUID,
+        id: str,
         name: str,
-        place_id: UUID,
+        place_id: str,
         place_name: str,
         place_city: str,
         place_address: str,
@@ -43,11 +39,15 @@ class Event(BaseModel):
         self.number_of_visitors = number_of_visitors
         self.created_at = created_at
         self.status_changed_at = status_changed_at
-    
+
     def is_published(self) -> bool:
-        """Бизнес-правило: опубликовано ли событие"""
         return self.status == EventStatus.PUBLISHED
-    
+
+    def can_register(self, current_time: datetime) -> bool:
+        return (
+            self.status == EventStatus.PUBLISHED and
+            current_time <= self.registration_deadline
+        )
+
     def in_city(self, city: str) -> bool:
-        """Бизнес-правило: проверка города"""
         return self.place_city.lower() == city.lower()
