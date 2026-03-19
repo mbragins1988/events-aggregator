@@ -35,7 +35,6 @@ class EventsProviderClient:
         url = f"{self._base_url}/api/events/"
         if cursor:
             params["cursor"] = cursor
-        print('--------- self._base_url ---------', url)
         try:
             logger.info("Попытка получения мероприятий на сервисе")
             response = await self._client.get(
