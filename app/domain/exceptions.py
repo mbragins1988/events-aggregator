@@ -27,3 +27,13 @@ class SeatNotAvailableError(DomainError):
 class TicketCreationError(DomainError):
     """Ошибка создания билета"""
     pass
+
+
+class TicketNotFoundError(DomainError):
+    """Билет не найден"""
+    pass
+
+
+class EventAlreadyPassedError(DomainError):
+    """Событие уже прошло"""
+    pass

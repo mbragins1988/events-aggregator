@@ -1,4 +1,3 @@
-# app/presentation/api.py
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
 from datetime import date
@@ -14,6 +13,7 @@ from app.application.sync_events import SyncEventsService
 from app.infrastructure.events_provider_client import EventsProviderClient
 from app.application.get_seats import GetSeatsUseCase
 from app.config import settings
+from app.infrastructure.ticket_repository import TicketRepository
 
 from app.application.create_ticket import CreateTicketUseCase
 from app.domain.exceptions import (
@@ -21,9 +21,12 @@ from app.domain.exceptions import (
     EventNotPublishedError,
     RegistrationDeadlinePassedError,
     SeatNotAvailableError,
-    TicketCreationError
+    TicketCreationError,
+    EventAlreadyPassedError,
+    TicketNotFoundError
 )
 from app.presentation import schemas
+from app.application.cancel_ticket import CancelTicketUseCase
 
 
 logger = logging.getLogger(__name__)
@@ -225,6 +228,7 @@ async def create_ticket(
     
     # Создаем зависимости
     event_repo = EventRepository(session)
+    ticket_repo = TicketRepository(session)
     api_client = EventsProviderClient(
         base_url=settings.CATALOG_BASE_URL,
         api_key=settings.API_TOKEN
@@ -233,6 +237,7 @@ async def create_ticket(
     # Создаем use case
     usecase = CreateTicketUseCase(
         event_repo=event_repo,
+        ticket_repo=ticket_repo,
         api_client=api_client
     )
     
@@ -261,4 +266,47 @@ async def create_ticket(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error in create_ticket: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.delete("/tickets/{ticket_id}", response_model=schemas.CancelResponse)
+async def cancel_ticket(
+    ticket_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """
+    Отменить регистрацию по ticket_id.
+    
+    - **ticket_id**: UUID билета, полученный при регистрации
+    """
+    logger.info(f"Cancelling ticket {ticket_id}")
+    
+    # Создаем зависимости
+    ticket_repo = TicketRepository(session)
+    event_repo = EventRepository(session)
+    api_client = EventsProviderClient(
+        base_url=settings.CATALOG_BASE_URL,
+        api_key=settings.API_TOKEN
+    )
+    
+    # Создаем use case
+    usecase = CancelTicketUseCase(
+        ticket_repo=ticket_repo,
+        event_repo=event_repo,
+        api_client=api_client
+    )
+    
+    try:
+        success = await usecase.execute(ticket_id)
+        
+        logger.info(f"Ticket {ticket_id} cancelled successfully")
+        
+        return {"success": success}
+        
+    except TicketNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (EventNotFoundError, EventAlreadyPassedError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Unexpected error in cancel_ticket: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")

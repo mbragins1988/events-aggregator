@@ -25,3 +25,16 @@ events_tbl = Table(
     Column("status_changed_at", DateTime(timezone=True),
            server_default=func.now(), onupdate=func.now()),
 )
+
+
+tickets_tbl = Table(
+    "tickets",
+    metadata,
+    Column("id", String, primary_key=True),  # ticket_id из API
+    Column("event_id", String, nullable=False),
+    Column("first_name", String, nullable=False),
+    Column("last_name", String, nullable=False),
+    Column("email", String, nullable=False),
+    Column("seat", String, nullable=False),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
+)

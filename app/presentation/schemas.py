@@ -67,3 +67,8 @@ class TicketCreateRequest(BaseModel):
 class TicketResponse(BaseModel):
     """Ответ с созданным билетом"""
     ticket_id: str
+
+
+class CancelResponse(BaseModel):
+    """Ответ на отмену регистрации"""
+    success: bool

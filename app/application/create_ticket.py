@@ -37,6 +37,11 @@ class EventsProviderClient(Protocol):
         ...
 
 
+class TicketRepository(Protocol):
+    async def create(self, ticket_id: str, event_id: str, first_name: str, last_name: str, email: str, seat: str):
+        ...
+
+
 class CreateTicketUseCase:
     """
     Бизнес-логика регистрации на событие.
@@ -52,10 +57,12 @@ class CreateTicketUseCase:
     def __init__(
         self,
         event_repo: EventRepository,
-        api_client: EventsProviderClient
+        api_client: EventsProviderClient,
+        ticket_repo: TicketRepository
     ):
         self.event_repo = event_repo
         self.api_client = api_client
+        self.ticket_repo = ticket_repo
     
     async def execute(
         self,
@@ -104,20 +111,25 @@ class CreateTicketUseCase:
             )
         
         # 5. Регистрируем через API
-        try:
-            ticket_id = await self.api_client.register(
+        ticket_id = await self.api_client.register(
                 event_id=event_id,
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
                 seat=seat
             )
-        finally:
-            await self.api_client.close()
         
         if not ticket_id:
-            raise TicketCreationError(
-                f"Failed to create ticket for event {event_id}, seat {seat}"
-            )
+            raise TicketCreationError(...)
+        
+        # Сохраняем в своей БД
+        await self.ticket_repo.create(
+            ticket_id=ticket_id,
+            event_id=event_id,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            seat=seat
+        )
         
         return ticket_id

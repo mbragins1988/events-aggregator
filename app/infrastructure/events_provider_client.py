@@ -1,5 +1,6 @@
 # app/infrastructure/events_provider_client.py
 import httpx
+import json
 import logging
 from typing import Optional, List, Dict, Any
 from datetime import date
@@ -106,22 +107,14 @@ class EventsProviderClient:
                 url,
                 headers={"x-api-key": self._api_key}
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 return data.get("seats", [])
             else:
                 logger.error(f"Events API ошибка: {response.status_code}")
                 return []
-            
-        except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
-            return []
-            
-        except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
-            return []
-                
+
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")
             return []
@@ -170,27 +163,30 @@ class EventsProviderClient:
     
     async def unregister(self, event_id: str, ticket_id: str) -> bool:
         """Отменить регистрацию"""
+        url = f"{self._base_url}/api/events/{event_id}/unregister/"
         try:
-            response = await self._client.delete(
-                f"{self._base_url}/api/events/{event_id}/unregister/",
-                json={"ticket_id": ticket_id},
+            # Используем общий метод request с DELETE и json данными
+            response = await self._client.request(
+                method="DELETE",
+                url=url,
+                json={"ticket_id": ticket_id},  # ← теперь json работает!
                 headers={
                     "x-api-key": self._api_key,
                     "Content-Type": "application/json"
                 }
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 return data.get("success", False)
             else:
                 logger.error(f"Events API ошибка: {response.status_code} - {response.text}")
                 return False
-                
+
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")
             return False
-    
+
     async def close(self):
         """Закрыть клиент"""
         await self._client.aclose()
