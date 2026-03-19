@@ -97,7 +97,7 @@ class EventsProviderClient:
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")
             return None
-    
+
     async def get_seats(self, event_id: str) -> List[str]:
         """Получить свободные места на событии"""
         url = f"{self._base_url}/api/events/{event_id}/seats/"
@@ -113,6 +113,14 @@ class EventsProviderClient:
             else:
                 logger.error(f"Events API ошибка: {response.status_code}")
                 return []
+            
+        except httpx.RequestError as e:
+            logger.error(f"Events API ошибка подключения: {e}")
+            return []
+            
+        except httpx.RequestError as e:
+            logger.error(f"Events API ошибка подключения: {e}")
+            return []
                 
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")

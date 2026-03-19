@@ -36,8 +36,6 @@ class SyncEventsService:
             existing = await self.session.execute(
                 select(events_tbl).where(events_tbl.c.id == event_data["id"])
             )
-            if existing:
-                print(f"{event_data['id']} Уже существует")
             if existing.scalar_one_or_none():
                 # Обновляем
                 stmt = (

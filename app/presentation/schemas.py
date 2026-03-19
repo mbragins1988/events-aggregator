@@ -47,3 +47,9 @@ class EventsListResponse(BaseModel):
     next: Optional[str]
     previous: Optional[str]
     results: List[EventResponse]
+
+
+class SeatsResponse(BaseModel):
+    """Ответ со списком свободных мест"""
+    event_id: str
+    available_seats: List[str]

@@ -11,7 +11,12 @@ from app.presentation import schemas
 from app.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.sync_events import SyncEventsService
-from app.domain.models import EventStatus
+
+from app.infrastructure.events_provider_client import EventsProviderClient
+from app.application.get_seats import GetSeatsUseCase
+from app.domain.exceptions import EventNotFoundError
+from app.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -135,3 +140,49 @@ async def trigger_sync(session: AsyncSession = Depends(get_db)):
         return {"message": f"Synchronized {count} events"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/events/{event_id}/seats", response_model=schemas.SeatsResponse)
+async def get_event_seats(
+    event_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """
+    Получить список свободных мест на событии.
+    
+    Результат кэшируется на 30 секунд.
+    
+    - **event_id**: UUID события
+    """
+    # Создаем зависимости для use case
+    event_repo = EventRepository(session)
+    api_client = EventsProviderClient(
+        base_url=settings.CATALOG_BASE_URL,
+        api_key=settings.API_TOKEN
+    )
+    
+    # Создаем и вызываем use case
+    usecase = GetSeatsUseCase(
+        event_repo=event_repo,
+        api_client=api_client
+    )
+    
+    try:
+        seats = await usecase.execute(event_id)
+        
+        return schemas.SeatsResponse(
+            event_id=event_id,
+            available_seats=seats
+        )
+        
+    except EventNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Event with id {event_id} not found"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in get_event_seats: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )

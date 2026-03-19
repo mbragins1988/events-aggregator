@@ -51,5 +51,9 @@ class Event:
             current_time <= self.registration_deadline
         )
 
+    def is_published(self) -> bool:
+        """Проверка, опубликовано ли событие"""
+        return self.status == "published"
+
     def in_city(self, city: str) -> bool:
         return self.place_city.lower() == city.lower()

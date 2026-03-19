@@ -12,6 +12,7 @@ class EventRepository:
         self.session = session
     
     async def get_by_id(self, event_id: str) -> Optional[Event]:
+        """Получить событие по ID"""
         query = select(events_tbl).where(events_tbl.c.id == event_id)
         result = await self.session.execute(query)
         row = result.first()
@@ -19,7 +20,6 @@ class EventRepository:
         if not row:
             return None
         
-        # Конвертируем DB row в Domain model
         return Event(
             id=row.id,
             name=row.name,
@@ -30,7 +30,7 @@ class EventRepository:
             place_seats_pattern=row.place_seats_pattern,
             event_time=row.event_time,
             registration_deadline=row.registration_deadline,
-            status=EventStatus(row.status),
+            status=row.status,  # теперь строка
             number_of_visitors=row.number_of_visitors,
             created_at=row.created_at,
             status_changed_at=row.status_changed_at
