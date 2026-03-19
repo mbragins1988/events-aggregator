@@ -12,3 +12,18 @@ class EventNotFoundError(DomainError):
 class EventNotPublishedError(DomainError):
     """Событие не опубликовано"""
     pass
+
+
+class RegistrationDeadlinePassedError(DomainError):
+    """Дедлайн регистрации прошел"""
+    pass
+
+
+class SeatNotAvailableError(DomainError):
+    """Место недоступно"""
+    pass
+
+
+class TicketCreationError(DomainError):
+    """Ошибка создания билета"""
+    pass

@@ -136,7 +136,7 @@ class EventsProviderClient:
     ) -> Optional[str]:
         """
         Зарегистрироваться на событие.
-        
+
         Returns:
             ticket_id или None в случае ошибки
         """
@@ -155,14 +155,15 @@ class EventsProviderClient:
                     "Content-Type": "application/json"
                 }
             )
-            
-            if response.status_code == 201:
+
+            # ИСПРАВЛЕНИЕ: API возвращает 200, а не 201
+            if response.status_code == 200:  # было 201
                 data = response.json()
                 return data.get("ticket_id")
             else:
                 logger.error(f"Events API ошибка: {response.status_code} - {response.text}")
                 return None
-                
+
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")
             return None

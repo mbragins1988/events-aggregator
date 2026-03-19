@@ -53,3 +53,17 @@ class SeatsResponse(BaseModel):
     """Ответ со списком свободных мест"""
     event_id: str
     available_seats: List[str]
+
+
+class TicketCreateRequest(BaseModel):
+    """Запрос на создание билета (регистрацию)"""
+    event_id: str
+    first_name: str
+    last_name: str
+    email: str
+    seat: str
+
+
+class TicketResponse(BaseModel):
+    """Ответ с созданным билетом"""
+    ticket_id: str

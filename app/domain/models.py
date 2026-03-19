@@ -9,6 +9,12 @@ class EventStatus(str, Enum):
     PUBLISHED = "published"
     REGISTRATION_CLOSED = "registration_closed"
     FINISHED = "finished"
+    UNKNOWN = "unknown"  # запасной вариант
+    
+    @classmethod
+    def _missing_(cls, value):
+        # Любой неизвестный статус становится UNKNOWN
+        return cls.UNKNOWN
 
 
 class Event:
