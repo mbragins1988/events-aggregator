@@ -1,10 +1,12 @@
+import logging
 from typing import List, Optional
 from datetime import date
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.infrastructure.db_schema import events_tbl
 from app.domain.models import Event, EventStatus
+
+logger = logging.getLogger(__name__)
 
 
 class EventRepository:
@@ -13,28 +15,39 @@ class EventRepository:
     
     async def get_by_id(self, event_id: str) -> Optional[Event]:
         """Получить событие по ID"""
+        logger.info(f"Repository getting event by id: {event_id}")
+
         query = select(events_tbl).where(events_tbl.c.id == event_id)
         result = await self.session.execute(query)
         row = result.first()
-        
+
         if not row:
+            logger.info(f"Событий с  id: {event_id} ненайдено")
             return None
-        
-        return Event(
-            id=row.id,
-            name=row.name,
-            place_id=row.place_id,
-            place_name=row.place_name,
-            place_city=row.place_city,
-            place_address=row.place_address,
-            place_seats_pattern=row.place_seats_pattern,
-            event_time=row.event_time,
-            registration_deadline=row.registration_deadline,
-            status=row.status,  # теперь строка
-            number_of_visitors=row.number_of_visitors,
-            created_at=row.created_at,
-            status_changed_at=row.status_changed_at
-        )
+
+        logger.info(f"Raw row data: id={row.id}, name={row.name}, status={row.status}")
+
+        try:
+            event = Event(
+                id=row.id,
+                name=row.name,
+                place_id=row.place_id,
+                place_name=row.place_name,
+                place_city=row.place_city,
+                place_address=row.place_address,
+                place_seats_pattern=row.place_seats_pattern,
+                event_time=row.event_time,
+                registration_deadline=row.registration_deadline,
+                status=row.status,
+                number_of_visitors=row.number_of_visitors,
+                created_at=row.created_at,
+                status_changed_at=row.status_changed_at
+            )
+            logger.info(f"Successfully created Event object with status: {event.status}")
+            return event
+        except Exception as e:
+            logger.error(f"Error creating Event object: {e}", exc_info=True)
+            raise
     
     async def get_all(self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0) -> List[Event]:
         query = select(events_tbl)
