@@ -149,7 +149,6 @@ class EventsProviderClient:
                 }
             )
 
-            # ИСПРАВЛЕНИЕ: API возвращает 200, а не 201
             if response.status_code == 200:  # было 201
                 data = response.json()
                 return data.get("ticket_id")
@@ -160,7 +159,7 @@ class EventsProviderClient:
         except httpx.RequestError as e:
             logger.error(f"Events API ошибка подключения: {e}")
             return None
-    
+
     async def unregister(self, event_id: str, ticket_id: str) -> bool:
         """Отменить регистрацию"""
         url = f"{self._base_url}/api/events/{event_id}/unregister/"
