@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
 from datetime import date
 import logging
+from uuid import UUID
 from urllib.parse import urlencode
 
 from app.application.get_events import GetEventsUseCase
@@ -210,17 +211,14 @@ async def create_ticket(
 ):
     """
     Зарегистрироваться на событие.
-    
-    - **event_id**: UUID события
-    - **first_name**: Имя участника
-    - **last_name**: Фамилия участника
-    - **email**: Email участника
-    - **seat**: Желаемое место (например, "A15")
-    
-    Returns:
-        ticket_id: UUID созданного билета
     """
     logger.info(f"Creating ticket for event {request.event_id}, seat {request.seat}")
+    
+    # Валидация UUID прямо здесь (возвращаем 400)
+    try:
+        UUID(request.event_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
     
     # Создаем зависимости
     event_repo = EventRepository(session)
@@ -252,17 +250,13 @@ async def create_ticket(
         
     except EventNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except EventNotPublishedError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except RegistrationDeadlinePassedError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except SeatNotAvailableError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except TicketCreationError as e:
+    except (EventNotPublishedError, RegistrationDeadlinePassedError, SeatNotAvailableError, TicketCreationError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error in create_ticket: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        await api_client.close()
 
 
 @router.delete("/tickets/{ticket_id}", response_model=schemas.CancelResponse)
