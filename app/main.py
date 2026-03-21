@@ -23,13 +23,13 @@ sync_task = None
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
     global sync_task
-    
+
     # Запускаем фоновую синхронизацию
     logger.info("Запуск scheduled_sync...")
     sync_task = asyncio.create_task(run_scheduled_sync(interval_hours=24))
-    
+
     yield
-    
+
     # Останавливаем воркер при завершении
     logger.info("Остановка воркера...")
     if sync_task:
@@ -41,16 +41,15 @@ async def lifespan(app: FastAPI):
     logger.info("Все воркеры отсановлены")
 
 
-app = FastAPI(
-    title="Events Aggregator",
-    lifespan=lifespan
-)
+app = FastAPI(title="Events Aggregator", lifespan=lifespan)
 
 app.include_router(router)
+
 
 @app.get("/")
 async def root():
     return {"service": "Events Aggregator", "status": "running"}
+
 
 @app.get("/api/health")
 async def health():

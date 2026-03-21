@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class EventRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-    
+
     async def get_by_id(self, event_id: str) -> Optional[Event]:
         """Получить событие по ID"""
         logger.info(f"Repository getting event by id: {event_id}")
@@ -41,53 +41,55 @@ class EventRepository:
                 status=row.status,
                 number_of_visitors=row.number_of_visitors,
                 created_at=row.created_at,
-                status_changed_at=row.status_changed_at
+                status_changed_at=row.status_changed_at,
             )
-            logger.info(f"Successfully created Event object with status: {event.status}")
+            logger.info(
+                f"Successfully created Event object with status: {event.status}"
+            )
             return event
         except Exception as e:
             logger.error(f"Error creating Event object: {e}", exc_info=True)
             raise
-    
-    async def get_all(self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0) -> List[Event]:
+
+    async def get_all(
+        self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0
+    ) -> List[Event]:
         query = select(events_tbl)
-        
+
         if date_from:
-            query = query.where(
-                func.date(events_tbl.c.event_time) >= date_from
-            )
-        
+            query = query.where(func.date(events_tbl.c.event_time) >= date_from)
+
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
         rows = result.all()
-        
+
         events = []
         for row in rows:
-            events.append(Event(
-                id=row.id,
-                name=row.name,
-                place_id=row.place_id,
-                place_name=row.place_name,
-                place_city=row.place_city,
-                place_address=row.place_address,
-                place_seats_pattern=row.place_seats_pattern,
-                event_time=row.event_time,
-                registration_deadline=row.registration_deadline,
-                status=EventStatus(row.status),
-                number_of_visitors=row.number_of_visitors,
-                created_at=row.created_at,
-                status_changed_at=row.status_changed_at
-            ))
-        
+            events.append(
+                Event(
+                    id=row.id,
+                    name=row.name,
+                    place_id=row.place_id,
+                    place_name=row.place_name,
+                    place_city=row.place_city,
+                    place_address=row.place_address,
+                    place_seats_pattern=row.place_seats_pattern,
+                    event_time=row.event_time,
+                    registration_deadline=row.registration_deadline,
+                    status=EventStatus(row.status),
+                    number_of_visitors=row.number_of_visitors,
+                    created_at=row.created_at,
+                    status_changed_at=row.status_changed_at,
+                )
+            )
+
         return events
-    
+
     async def count(self, date_from: Optional[date] = None) -> int:
         query = select(func.count()).select_from(events_tbl)
-        
+
         if date_from:
-            query = query.where(
-                func.date(events_tbl.c.event_time) >= date_from
-            )
-        
+            query = query.where(func.date(events_tbl.c.event_time) >= date_from)
+
         result = await self.session.execute(query)
         return result.scalar() or 0

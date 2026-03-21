@@ -8,6 +8,7 @@ from typing import Optional, List
 
 class PlaceResponse(BaseModel):
     """Ответ с данными площадки"""
+
     id: UUID
     name: str
     city: str
@@ -16,11 +17,13 @@ class PlaceResponse(BaseModel):
 
 class PlaceDetailResponse(PlaceResponse):
     """Детальный ответ с данными площадки (включает схему мест)"""
+
     seats_pattern: str
 
 
 class EventResponse(BaseModel):
     """Ответ с данными события"""
+
     id: UUID
     name: str
     place: PlaceResponse
@@ -32,6 +35,7 @@ class EventResponse(BaseModel):
 
 class EventDetailResponse(BaseModel):
     """Детальный ответ с данными события (для GET /events/{id})"""
+
     id: UUID
     name: str
     place: PlaceDetailResponse
@@ -43,6 +47,7 @@ class EventDetailResponse(BaseModel):
 
 class EventsListResponse(BaseModel):
     """Ответ со списком событий (с пагинацией)"""
+
     count: int
     next: Optional[str]
     previous: Optional[str]
@@ -51,12 +56,14 @@ class EventsListResponse(BaseModel):
 
 class SeatsResponse(BaseModel):
     """Ответ со списком свободных мест"""
+
     event_id: str
     available_seats: List[str]
 
 
 class TicketCreateRequest(BaseModel):
     """Запрос на создание билета (регистрацию)"""
+
     event_id: str
     first_name: str
     last_name: str
@@ -66,9 +73,11 @@ class TicketCreateRequest(BaseModel):
 
 class TicketResponse(BaseModel):
     """Ответ с созданным билетом"""
+
     ticket_id: str
 
 
 class CancelResponse(BaseModel):
     """Ответ на отмену регистрации"""
+
     success: bool

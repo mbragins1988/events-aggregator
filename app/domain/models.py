@@ -9,7 +9,7 @@ class EventStatus(str, Enum):
     PUBLISHED = "published"
     REGISTRATION_CLOSED = "registration_closed"
     FINISHED = "finished"
-    
+
     @classmethod
     def _missing_(cls, value):
         # Любой неизвестный статус логируем, но не падаем
@@ -53,13 +53,9 @@ class Event:
 
     def can_register(self, current_time: datetime) -> bool:
         return (
-            self.status == EventStatus.PUBLISHED and
-            current_time <= self.registration_deadline
+            self.status == EventStatus.PUBLISHED
+            and current_time <= self.registration_deadline
         )
-
-    def is_published(self) -> bool:
-        """Проверка, опубликовано ли событие"""
-        return self.status == "published"
 
     def in_city(self, city: str) -> bool:
         return self.place_city.lower() == city.lower()
@@ -68,20 +64,20 @@ class Event:
 class Ticket:
     """
     Доменная модель билета (регистрации).
-    
+
     Хранит информацию о регистрации участника на событие.
     Используется для связи ticket_id (из внешнего API) с event_id.
     """
-    
+
     def __init__(
         self,
-        id: str,              # ticket_id из внешнего API
-        event_id: str,         # ID события
+        id: str,  # ticket_id из внешнего API
+        event_id: str,  # ID события
         first_name: str,
         last_name: str,
         email: str,
         seat: str,
-        created_at: Optional[datetime] = None
+        created_at: Optional[datetime] = None,
     ):
         self.id = id
         self.event_id = event_id
@@ -90,16 +86,16 @@ class Ticket:
         self.email = email
         self.seat = seat
         self.created_at = created_at or datetime.now()
-    
+
     @property
     def full_name(self) -> str:
         """Полное имя участника"""
         return f"{self.first_name} {self.last_name}".strip()
-    
+
     def belongs_to_event(self, event_id: str) -> bool:
         """Проверка, относится ли билет к указанному событию"""
         return self.event_id == event_id
-    
+
     def matches_email(self, email: str) -> bool:
         """Проверка email участника"""
         return self.email.lower() == email.lower()
@@ -107,7 +103,7 @@ class Ticket:
 
 class SyncMetadata:
     """Метаданные синхронизации"""
-    
+
     def __init__(
         self,
         id: str = "singleton",
@@ -115,7 +111,7 @@ class SyncMetadata:
         last_sync_time: Optional[datetime] = None,
         total_events_synced: int = 0,
         last_sync_status: str = "success",
-        last_error: Optional[str] = None
+        last_error: Optional[str] = None,
     ):
         self.id = id
         self.last_changed_at = last_changed_at
@@ -123,7 +119,7 @@ class SyncMetadata:
         self.total_events_synced = total_events_synced
         self.last_sync_status = last_sync_status
         self.last_error = last_error
-    
+
     def get_changed_at_param(self) -> str:
         """Получить параметр changed_at для API запроса"""
         if not self.last_changed_at:
@@ -131,8 +127,14 @@ class SyncMetadata:
             return "2000-01-01"
         # Следующие синхронизации: только изменения с последней даты
         return self.last_changed_at.date().isoformat()
-    
-    def update_after_sync(self, max_changed_at: datetime, total_events: int, status: str = "success", error: Optional[str] = None):
+
+    def update_after_sync(
+        self,
+        max_changed_at: datetime,
+        total_events: int,
+        status: str = "success",
+        error: Optional[str] = None,
+    ):
         """Обновить метаданные после синхронизации"""
         self.last_changed_at = max_changed_at
         self.last_sync_time = datetime.now()

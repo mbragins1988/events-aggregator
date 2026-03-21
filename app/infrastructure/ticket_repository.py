@@ -1,17 +1,24 @@
 # app/infrastructure/ticket_repository.py
 from typing import Optional
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db_schema import tickets_tbl
-from app.domain.models import Ticket
 
 
 class TicketRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-    
-    async def create(self, ticket_id: str, event_id: str, first_name: str, last_name: str, email: str, seat: str):
+
+    async def create(
+        self,
+        ticket_id: str,
+        event_id: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        seat: str,
+    ):
         """Сохранить информацию о билете"""
         stmt = tickets_tbl.insert().values(
             id=ticket_id,
@@ -19,11 +26,11 @@ class TicketRepository:
             first_name=first_name,
             last_name=last_name,
             email=email,
-            seat=seat
+            seat=seat,
         )
         await self.session.execute(stmt)
         await self.session.commit()
-    
+
     async def get_by_id(self, ticket_id: str) -> Optional[dict]:
         """Получить билет по ID"""
         query = select(tickets_tbl).where(tickets_tbl.c.id == ticket_id)
@@ -31,7 +38,7 @@ class TicketRepository:
         row = result.first()
         if not row:
             return None
-        
+
         # Исправление: преобразуем Row в словарь правильно
         return {
             "id": row.id,
@@ -40,7 +47,7 @@ class TicketRepository:
             "last_name": row.last_name,
             "email": row.email,
             "seat": row.seat,
-            "created_at": row.created_at
+            "created_at": row.created_at,
         }
 
     async def delete(self, ticket_id: str):

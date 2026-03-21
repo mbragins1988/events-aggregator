@@ -21,3 +21,8 @@ dependencies = [
 members = [
     "app",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.7",
+]
