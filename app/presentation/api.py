@@ -112,35 +112,31 @@ async def get_event(
     event_id: str,
     repo: EventRepository = Depends(get_event_repository)
 ):
-    logger.info(f"Getting event details for id: {event_id}")
+    """
+    Получить детальную информацию о событии по ID
     
-    try:
-        event = await repo.get_by_id(event_id)
-        
-        if not event:
-            logger.warning(f"Event not found: {event_id}")
-            raise HTTPException(status_code=404, detail="Event not found")
-        
-        logger.info(f"Event found: {event.id} - {event.name} - status: {event.status}")
-        
-        return schemas.EventDetailResponse(
-            id=event.id,
-            name=event.name,
-            place=schemas.PlaceDetailResponse(
-                id=event.place_id,
-                name=event.place_name,
-                city=event.place_city,
-                address=event.place_address,
-                seats_pattern=event.place_seats_pattern
-            ),
-            event_time=event.event_time,
-            registration_deadline=event.registration_deadline,
-            status=event.status,
-            number_of_visitors=event.number_of_visitors
-        )
-    except Exception as e:
-        logger.error(f"Error getting event {event_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    - **event_id**: UUID события
+    """
+    event = await repo.get_by_id(event_id)
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    return schemas.EventDetailResponse(
+        id=event.id,
+        name=event.name,
+        place=schemas.PlaceDetailResponse(
+            id=event.place_id,
+            name=event.place_name,
+            city=event.place_city,
+            address=event.place_address,
+            seats_pattern=event.place_seats_pattern
+        ),
+        event_time=event.event_time,
+        registration_deadline=event.registration_deadline,
+        status=event.status,
+        number_of_visitors=event.number_of_visitors
+    )
 
 
 @router.post("/sync/trigger", status_code=200)
