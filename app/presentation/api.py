@@ -202,6 +202,8 @@ async def get_event_seats(
             status_code=500,
             detail="Internal server error"
         )
+    finally:
+        await api_client.close()
 
 
 @router.post("/tickets", response_model=schemas.TicketResponse, status_code=201)
@@ -300,3 +302,5 @@ async def cancel_ticket(
     except Exception as e:
         logger.error(f"Unexpected error in cancel_ticket: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        await api_client.close()
