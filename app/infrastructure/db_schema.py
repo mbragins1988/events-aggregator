@@ -38,3 +38,15 @@ tickets_tbl = Table(
     Column("seat", String, nullable=False),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
+
+
+sync_metadata_tbl = Table(
+    "sync_metadata",
+    metadata,
+    Column("id", String, primary_key=True, default="singleton"),  # одна запись
+    Column("last_changed_at", DateTime(timezone=True), nullable=True),  # последняя дата changed_at
+    Column("last_sync_time", DateTime(timezone=True), server_default=func.now()),  # время последней синхронизации
+    Column("total_events_synced", Integer, default=0),  # общее количество синхронизированных событий
+    Column("last_sync_status", String, default="success"),  # статус последней синхронизации
+    Column("last_error", String, nullable=True),  # последняя ошибка
+)

@@ -103,3 +103,39 @@ class Ticket:
     def matches_email(self, email: str) -> bool:
         """Проверка email участника"""
         return self.email.lower() == email.lower()
+
+
+class SyncMetadata:
+    """Метаданные синхронизации"""
+    
+    def __init__(
+        self,
+        id: str = "singleton",
+        last_changed_at: Optional[datetime] = None,
+        last_sync_time: Optional[datetime] = None,
+        total_events_synced: int = 0,
+        last_sync_status: str = "success",
+        last_error: Optional[str] = None
+    ):
+        self.id = id
+        self.last_changed_at = last_changed_at
+        self.last_sync_time = last_sync_time
+        self.total_events_synced = total_events_synced
+        self.last_sync_status = last_sync_status
+        self.last_error = last_error
+    
+    def get_changed_at_param(self) -> str:
+        """Получить параметр changed_at для API запроса"""
+        if not self.last_changed_at:
+            # Первая синхронизация: получаем все события
+            return "2000-01-01"
+        # Следующие синхронизации: только изменения с последней даты
+        return self.last_changed_at.date().isoformat()
+    
+    def update_after_sync(self, max_changed_at: datetime, total_events: int, status: str = "success", error: Optional[str] = None):
+        """Обновить метаданные после синхронизации"""
+        self.last_changed_at = max_changed_at
+        self.last_sync_time = datetime.now()
+        self.total_events_synced += total_events
+        self.last_sync_status = status
+        self.last_error = error
