@@ -3,6 +3,7 @@ import sys
 import logging
 from fastapi import FastAPI
 from app.presentation.api import router
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,6 +15,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Events Aggregator")
+app.add_middleware(SentryAsgiMiddleware)
 app.include_router(router)
 
 @app.get("/")
