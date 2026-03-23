@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 sync_task = None
-
+logger.info(f"SENTRY_DSN starts with http: {str(settings.SENTRY_DSN)}")
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
     environment="production",  # или staging
