@@ -91,5 +91,5 @@ async def workers_health():
 
 
 @app.get("/api/sentry-test")
-async def sentry_test():
-    raise ValueError("Тест Glitchtip")
+async def trigger_error():
+    division_by_zero = 1 / 0
