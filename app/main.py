@@ -22,9 +22,9 @@ sync_task = None
 logger.info(f"SENTRY_DSN starts with http: {str(settings.SENTRY_DSN)}")
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
-    environment="production",  # или staging
-    release="1.0.0",  # версия вашего приложения
-    traces_sample_rate=1.0,  # для сбора производительности
+    environment="production",
+    release="1.0.0",
+    traces_sample_rate=1.0,
 )
 
 
@@ -88,3 +88,8 @@ async def workers_health():
         return {"sync_worker": "running"}
     else:
         return {"sync_worker": "stopped"}
+
+
+@app.get("/api/sentry-test")
+async def sentry_test():
+    raise ValueError("Тест Glitchtip")
