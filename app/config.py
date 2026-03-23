@@ -11,6 +11,9 @@ class Settings:
     # API
     API_TOKEN: str = os.getenv("API_TOKEN", "")
 
+    # SENTRY_DSN
+    SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
+
     # Services
     CATALOG_BASE_URL: str = os.getenv("CATALOG_BASE_URL", "")
 

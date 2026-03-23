@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.presentation.api import router
 from app.presentation.sync_worker import run_scheduled_sync
+import sentry_sdk
+from app.config import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,6 +19,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 sync_task = None
+
+sentry_sdk.init(
+    dsn=settings.SENTRY_DSN,
+    environment="production",  # или staging
+    release="1.0.0",  # версия вашего приложения
+    traces_sample_rate=1.0,  # для сбора производительности
+)
 
 
 async def monitor_worker(name: str, worker_func):
