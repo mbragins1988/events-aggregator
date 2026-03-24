@@ -1,5 +1,6 @@
 # app/celery_app.py
 from celery import Celery
+
 from app.config import settings
 
 # Формат для PostgreSQL брокера через SQLAlchemy
@@ -13,7 +14,7 @@ celery_app = Celery(
     "events_aggregator",
     broker=broker_url,
     backend=result_backend,
-    include=["app.celery_tasks"]
+    include=["app.celery_tasks"],
 )
 
 # Настройки Celery
@@ -38,7 +39,7 @@ celery_app.conf.update(
             "schedule": 24 * 60 * 60,  # раз в сутки
             "options": {
                 "expires": 23 * 60 * 60,  # задача устаревает через 23 часа
-            }
+            },
         },
     },
 )

@@ -1,5 +1,5 @@
-import logging
 from datetime import date
+import logging
 from typing import AsyncGenerator, Optional
 from urllib.parse import urlencode
 from uuid import UUID
@@ -7,12 +7,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.celery_tasks import sync_events_task
 from app.application.cancel_ticket import CancelTicketUseCase
 from app.application.create_ticket import CreateTicketUseCase
 from app.application.get_events import GetEventsUseCase
 from app.application.get_seats import GetSeatsUseCase
-from app.application.sync_events import SyncEventsService
+from app.celery_tasks import sync_events_task
 from app.config import settings
 from app.database import get_db
 from app.domain.exceptions import (
@@ -147,16 +146,16 @@ async def get_event(
 async def trigger_sync():
     """
     Ручной запуск синхронизации с Events Provider API.
-    
+
     Задача ставится в очередь Celery и выполняется асинхронно.
     """
     # Отправляем задачу в Celery
     task = sync_events_task.delay()
-    
+
     return {
         "message": "Sync task queued",
         "task_id": task.id,
-        "status_url": f"/api/sync/status/{task.id}"
+        "status_url": f"/api/sync/status/{task.id}",
     }
 
 
@@ -166,8 +165,9 @@ async def get_sync_status(task_id: str):
     Получить статус задачи синхронизации.
     """
     from app.celery_app import celery_app
+
     task = celery_app.AsyncResult(task_id)
-    
+
     if task.pending:
         status = "pending"
     elif task.failed():
@@ -179,12 +179,8 @@ async def get_sync_status(task_id: str):
     else:
         status = "unknown"
         result = None
-    
-    return {
-        "task_id": task_id,
-        "status": status,
-        "result": result
-    }
+
+    return {"task_id": task_id, "status": status, "result": result}
 
 
 @router.get("/events/{event_id}/seats", response_model=schemas.SeatsResponse)

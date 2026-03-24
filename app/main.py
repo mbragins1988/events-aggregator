@@ -1,9 +1,11 @@
 # app/main.py
-import sys
 import logging
+import sys
+
 from fastapi import FastAPI
-from app.presentation.api import router
+
 from app.celery_app import celery_app
+from app.presentation.api import router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +20,11 @@ app = FastAPI(title="Events Aggregator")
 
 app.include_router(router)
 
+
 @app.get("/")
 async def root():
     return {"service": "Events Aggregator", "status": "running"}
+
 
 @app.get("/api/health")
 async def health():
@@ -36,21 +40,15 @@ async def celery_status():
         # Отправляем тестовую задачу
         inspect = celery_app.control.inspect()
         stats = inspect.stats()
-        
+
         if stats:
             workers = list(stats.keys())
             return {
                 "status": "running",
                 "workers": workers,
-                "worker_count": len(workers)
+                "worker_count": len(workers),
             }
         else:
-            return {
-                "status": "no_workers",
-                "message": "No Celery workers running"
-            }
+            return {"status": "no_workers", "message": "No Celery workers running"}
     except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+        return {"status": "error", "error": str(e)}

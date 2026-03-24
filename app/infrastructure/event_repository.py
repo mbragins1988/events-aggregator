@@ -1,5 +1,5 @@
-import logging
 from datetime import date
+import logging
 from typing import List, Optional
 
 from sqlalchemy import func, select
