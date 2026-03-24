@@ -1,7 +1,5 @@
-from typing import Protocol
-from datetime import datetime
-from typing import Optional
-from datetime import timezone
+from typing import Protocol, Optional
+from datetime import datetime, timezone
 
 from app.domain.models import Event
 from app.domain.exceptions import (

@@ -45,10 +45,13 @@ class EventsProviderClient:
             return response.json()
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"Events API HTTP ошибка {e.response.status_code}: {e}")
+            # Используем %s вместо f-строки
+            logger.error(
+                "Events API HTTP ошибка %s: %s", e.response.status_code, e
+            )
             return {"next": None, "previous": None, "results": []}
         except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
+            logger.error("Events API ошибка подключения: %s", e)
             return {"next": None, "previous": None, "results": []}
 
     async def get_all_events(self, changed_at: date) -> List[Dict[str, Any]]:
@@ -73,7 +76,7 @@ class EventsProviderClient:
             else:
                 break
 
-        logger.info(f"Получено {len(all_events)} событий из API")
+        logger.info("Получено %d событий из API", len(all_events))
         return all_events
 
     async def get_event(self, event_id: str) -> Optional[Dict[str, Any]]:
@@ -87,11 +90,11 @@ class EventsProviderClient:
             elif response.status_code == 404:
                 return None
             else:
-                logger.error(f"Events API ошибка: {response.status_code}")
+                logger.error("Events API ошибка: %s", response.status_code)
                 return None
 
         except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
+            logger.error("Events API ошибка подключения: %s", e)
             return None
 
     async def get_seats(self, event_id: str) -> List[str]:
@@ -104,11 +107,11 @@ class EventsProviderClient:
                 data = response.json()
                 return data.get("seats", [])
             else:
-                logger.error(f"Events API ошибка: {response.status_code}")
+                logger.error("Events API ошибка: %s", response.status_code)
                 return []
 
         except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
+            logger.error("Events API ошибка подключения: %s", e)
             return []
 
     async def register(
@@ -141,23 +144,22 @@ class EventsProviderClient:
                 return data.get("ticket_id")
             else:
                 logger.error(
-                    f"Events API ошибка: {response.status_code} - {response.text}"
+                    "Events API ошибка: %s - %s", response.status_code, response.text
                 )
                 return None
 
         except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
+            logger.error("Events API ошибка подключения: %s", e)
             return None
 
     async def unregister(self, event_id: str, ticket_id: str) -> bool:
         """Отменить регистрацию"""
         url = f"{self._base_url}/api/events/{event_id}/unregister/"
         try:
-            # Используем общий метод request с DELETE и json данными
             response = await self._client.request(
                 method="DELETE",
                 url=url,
-                json={"ticket_id": ticket_id},  # ← теперь json работает!
+                json={"ticket_id": ticket_id},
                 headers={
                     "x-api-key": self._api_key,
                     "Content-Type": "application/json",
@@ -169,12 +171,12 @@ class EventsProviderClient:
                 return data.get("success", False)
             else:
                 logger.error(
-                    f"Events API ошибка: {response.status_code} - {response.text}"
+                    "Events API ошибка: %s - %s", response.status_code, response.text
                 )
                 return False
 
         except httpx.RequestError as e:
-            logger.error(f"Events API ошибка подключения: {e}")
+            logger.error("Events API ошибка подключения: %s", e)
             return False
 
     async def close(self):

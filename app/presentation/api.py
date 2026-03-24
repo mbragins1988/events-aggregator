@@ -1,33 +1,32 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import Optional
-from datetime import date
 import logging
+from datetime import date
+from typing import Optional
 from uuid import UUID
 from urllib.parse import urlencode
 
-from app.application.get_events import GetEventsUseCase
-from app.infrastructure.event_repository import EventRepository
-from app.database import get_db
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.application.sync_events import SyncEventsService
 
-from app.infrastructure.events_provider_client import EventsProviderClient
-from app.application.get_seats import GetSeatsUseCase
-from app.config import settings
-from app.infrastructure.ticket_repository import TicketRepository
-
+from app.application.cancel_ticket import CancelTicketUseCase
 from app.application.create_ticket import CreateTicketUseCase
+from app.application.get_events import GetEventsUseCase
+from app.application.get_seats import GetSeatsUseCase
+from app.application.sync_events import SyncEventsService
+from app.config import settings
+from app.database import get_db
 from app.domain.exceptions import (
+    EventAlreadyPassedError,
     EventNotFoundError,
     EventNotPublishedError,
     RegistrationDeadlinePassedError,
     SeatNotAvailableError,
     TicketCreationError,
-    EventAlreadyPassedError,
     TicketNotFoundError,
 )
+from app.infrastructure.event_repository import EventRepository
+from app.infrastructure.events_provider_client import EventsProviderClient
+from app.infrastructure.ticket_repository import TicketRepository
 from app.presentation import schemas
-from app.application.cancel_ticket import CancelTicketUseCase
 
 
 logger = logging.getLogger(__name__)
