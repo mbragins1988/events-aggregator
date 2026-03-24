@@ -1,10 +1,10 @@
 import logging
 from datetime import date
 from typing import AsyncGenerator, Optional
-from uuid import UUID
 from urllib.parse import urlencode
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.cancel_ticket import CancelTicketUseCase
@@ -28,7 +28,6 @@ from app.infrastructure.events_provider_client import EventsProviderClient
 from app.infrastructure.ticket_repository import TicketRepository
 from app.presentation import schemas
 
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["events"])
@@ -37,8 +36,7 @@ router = APIRouter(prefix="/api", tags=["events"])
 async def get_events_provider_client() -> AsyncGenerator[EventsProviderClient, None]:
     """Dependency для получения клиента Events Provider API"""
     client = EventsProviderClient(
-        base_url=settings.CATALOG_BASE_URL,
-        api_key=settings.API_TOKEN
+        base_url=settings.CATALOG_BASE_URL, api_key=settings.API_TOKEN
     )
     try:
         yield client
@@ -166,17 +164,21 @@ async def trigger_sync(session: AsyncSession = Depends(get_db)):
 async def get_event_seats(
     event_id: str,
     session: AsyncSession = Depends(get_db),
-    api_client: EventsProviderClient = Depends(get_events_provider_client),  # ← добавили
+    api_client: EventsProviderClient = Depends(
+        get_events_provider_client
+    ),  # ← добавили
 ):
     event_repo = EventRepository(session)
-    
+
     usecase = GetSeatsUseCase(event_repo=event_repo, api_client=api_client)
-    
+
     try:
         seats = await usecase.execute(event_id)
         return schemas.SeatsResponse(event_id=event_id, available_seats=seats)
     except EventNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Event with id {event_id} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Event with id {event_id} not found"
+        )
     except Exception as e:
         logger.error(f"Unexpected error in get_event_seats: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -186,23 +188,23 @@ async def get_event_seats(
 async def create_ticket(
     request: schemas.TicketCreateRequest,
     session: AsyncSession = Depends(get_db),
-    api_client: EventsProviderClient = Depends(get_events_provider_client),  # ← добавили
+    api_client: EventsProviderClient = Depends(
+        get_events_provider_client
+    ),  # ← добавили
 ):
     # Валидация UUID
     try:
         UUID(request.event_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")
-    
+
     event_repo = EventRepository(session)
     ticket_repo = TicketRepository(session)
-    
+
     usecase = CreateTicketUseCase(
-        event_repo=event_repo,
-        ticket_repo=ticket_repo,
-        api_client=api_client
+        event_repo=event_repo, ticket_repo=ticket_repo, api_client=api_client
     )
-    
+
     try:
         ticket_id = await usecase.execute(
             event_id=request.event_id,
@@ -211,11 +213,11 @@ async def create_ticket(
             email=request.email,
             seat=request.seat,
         )
-        
+
         logger.info(f"Ticket created successfully: {ticket_id}")
-        
+
         return schemas.TicketResponse(ticket_id=ticket_id)
-        
+
     except EventNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except (
@@ -234,24 +236,24 @@ async def create_ticket(
 async def cancel_ticket(
     ticket_id: str,
     session: AsyncSession = Depends(get_db),
-    api_client: EventsProviderClient = Depends(get_events_provider_client),  # ← добавили
+    api_client: EventsProviderClient = Depends(
+        get_events_provider_client
+    ),  # ← добавили
 ):
     ticket_repo = TicketRepository(session)
     event_repo = EventRepository(session)
-    
+
     usecase = CancelTicketUseCase(
-        ticket_repo=ticket_repo,
-        event_repo=event_repo,
-        api_client=api_client
+        ticket_repo=ticket_repo, event_repo=event_repo, api_client=api_client
     )
-    
+
     try:
         success = await usecase.execute(ticket_id)
-        
+
         logger.info(f"Ticket {ticket_id} cancelled successfully")
-        
+
         return {"success": success}
-        
+
     except TicketNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except (EventNotFoundError, EventAlreadyPassedError) as e:

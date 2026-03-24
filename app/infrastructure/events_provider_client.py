@@ -1,8 +1,9 @@
 # app/infrastructure/events_provider_client.py
-import httpx
 import logging
-from typing import Optional, List, Dict, Any
 from datetime import date
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -46,38 +47,11 @@ class EventsProviderClient:
 
         except httpx.HTTPStatusError as e:
             # Используем %s вместо f-строки
-            logger.error(
-                "Events API HTTP ошибка %s: %s", e.response.status_code, e
-            )
+            logger.error("Events API HTTP ошибка %s: %s", e.response.status_code, e)
             return {"next": None, "previous": None, "results": []}
         except httpx.RequestError as e:
             logger.error("Events API ошибка подключения: %s", e)
             return {"next": None, "previous": None, "results": []}
-
-    async def get_all_events(self, changed_at: date) -> List[Dict[str, Any]]:
-        """
-        Получить ВСЕ события (обходит пагинацию).
-        Именно этот метод используем в синхронизации.
-        """
-        all_events = []
-        cursor = None
-
-        while True:
-            page = await self.get_events_page(changed_at, cursor)
-            all_events.extend(page["results"])
-
-            next_url = page.get("next")
-            if not next_url:
-                break
-
-            # Извлекаем курсор из URL следующей страницы
-            if "cursor=" in next_url:
-                cursor = next_url.split("cursor=")[-1]
-            else:
-                break
-
-        logger.info("Получено %d событий из API", len(all_events))
-        return all_events
 
     async def get_event(self, event_id: str) -> Optional[Dict[str, Any]]:
         """Получить конкретное событие"""

@@ -1,9 +1,10 @@
 # app/presentation/schemas.py
 # Схемы для валидации и сериализации API запросов/ответов.
-from pydantic import BaseModel
 from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
-from typing import Optional, List
+
+from pydantic import BaseModel
 
 
 class PlaceResponse(BaseModel):

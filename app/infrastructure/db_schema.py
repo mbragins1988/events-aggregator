@@ -1,6 +1,6 @@
 # app/infrastructure/models.py
 # Описание таблиц в БД. Alembic будет использовать это для создания таблиц
-from sqlalchemy import Table, Column, String, Integer, DateTime, MetaData
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table
 from sqlalchemy.sql import func
 
 # Метаданные - нужны для Alembic

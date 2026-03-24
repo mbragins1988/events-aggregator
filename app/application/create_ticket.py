@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, Protocol
 
-from app.domain.models import Event
 from app.domain.exceptions import (
     EventNotFoundError,
     EventNotPublishedError,
@@ -9,6 +8,7 @@ from app.domain.exceptions import (
     SeatNotAvailableError,
     TicketCreationError,
 )
+from app.domain.models import Event
 
 
 class EventRepository(Protocol):

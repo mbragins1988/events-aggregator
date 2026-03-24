@@ -1,13 +1,15 @@
 # app/main.py
-import sys
-import logging
 import asyncio
+import logging
+import sys
 from contextlib import asynccontextmanager
+
+import sentry_sdk
 from fastapi import FastAPI
+
+from app.config import settings
 from app.presentation.api import router
 from app.presentation.sync_worker import run_scheduled_sync
-import sentry_sdk
-from app.config import settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -88,8 +90,3 @@ async def workers_health():
         return {"sync_worker": "running"}
     else:
         return {"sync_worker": "stopped"}
-
-
-@app.get("/api/sentry-test")
-async def trigger_error():
-    division_by_zero = 1 / 0

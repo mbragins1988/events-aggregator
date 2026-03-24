@@ -1,7 +1,8 @@
 import asyncio
 import logging
-from app.database import AsyncSessionLocal
+
 from app.application.sync_events import SyncEventsService
+from app.database import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 

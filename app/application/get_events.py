@@ -1,7 +1,8 @@
 # Бизнес-логика конкретной операции. Координирует работу, но не знает откуда данные.
 # Валидирует параметры. Просит репозиторий дать данные. Возвращает результат
-from typing import List, Optional, Protocol
 from datetime import date
+from typing import List, Optional, Protocol
+
 from app.domain.models import Event
 
 

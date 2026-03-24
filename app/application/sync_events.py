@@ -1,13 +1,14 @@
-# app/application/sync_events.py
 import logging
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
+
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.events_provider_client import EventsProviderClient
-from app.infrastructure.db_schema import events_tbl
-from app.infrastructure.sync_metadata_repository import SyncMetadataRepository
 from app.config import settings
+from app.infrastructure.db_schema import events_tbl
+from app.infrastructure.events_paginator import EventsPaginator
+from app.infrastructure.events_provider_client import EventsProviderClient
+from app.infrastructure.sync_metadata_repository import SyncMetadataRepository
 
 logger = logging.getLogger(__name__)
 
@@ -33,25 +34,17 @@ class SyncEventsService:
         logger.info(f"Syncing events changed after: {changed_at_param}")
 
         try:
-            # 2. Получаем события из API с инкрементальной датой
-            events_data = await self.client.get_all_events(
-                changed_at=date.fromisoformat(changed_at_param)
-            )
+            # 2. Используем пагинатор для обхода всех страниц
+            changed_at = datetime.fromisoformat(changed_at_param).date()
+            paginator = EventsPaginator(self.client, changed_at)
 
-            logger.info(f"Received {len(events_data)} events from API")
-
-            if not events_data:
-                logger.info("No new events to sync")
-                await self.metadata_repo.update(metadata)
-                return 0
-
-            # 3. Сохраняем события и находим максимальный changed_at
+            # 3. Обрабатываем события
             max_changed_at = metadata.last_changed_at or datetime(
                 2000, 1, 1, tzinfo=timezone.utc
             )
             count = 0
 
-            for event_data in events_data:
+            async for event_data in paginator:
                 # Определяем changed_at события
                 event_changed_at = datetime.fromisoformat(
                     event_data.get("changed_at", event_data["created_at"]).replace(
@@ -63,68 +56,13 @@ class SyncEventsService:
                 if event_changed_at > max_changed_at:
                     max_changed_at = event_changed_at
 
-                # Проверяем, есть ли уже такое событие
-                existing = await self.session.execute(
-                    select(events_tbl).where(events_tbl.c.id == event_data["id"])
-                )
-                existing_row = existing.scalar_one_or_none()
-
-                if existing_row:
-                    # Обновляем
-                    stmt = (
-                        update(events_tbl)
-                        .where(events_tbl.c.id == event_data["id"])
-                        .values(
-                            name=event_data["name"],
-                            place_id=event_data["place"]["id"],
-                            place_name=event_data["place"]["name"],
-                            place_city=event_data["place"]["city"],
-                            place_address=event_data["place"]["address"],
-                            place_seats_pattern=event_data["place"]["seats_pattern"],
-                            event_time=datetime.fromisoformat(
-                                event_data["event_time"].replace("Z", "+00:00")
-                            ),
-                            registration_deadline=datetime.fromisoformat(
-                                event_data["registration_deadline"].replace(
-                                    "Z", "+00:00"
-                                )
-                            ),
-                            status=event_data["status"],
-                            number_of_visitors=event_data.get("number_of_visitors", 0),
-                        )
-                    )
-                else:
-                    # Вставляем новое
-                    stmt = insert(events_tbl).values(
-                        id=event_data["id"],
-                        name=event_data["name"],
-                        place_id=event_data["place"]["id"],
-                        place_name=event_data["place"]["name"],
-                        place_city=event_data["place"]["city"],
-                        place_address=event_data["place"]["address"],
-                        place_seats_pattern=event_data["place"]["seats_pattern"],
-                        event_time=datetime.fromisoformat(
-                            event_data["event_time"].replace("Z", "+00:00")
-                        ),
-                        registration_deadline=datetime.fromisoformat(
-                            event_data["registration_deadline"].replace("Z", "+00:00")
-                        ),
-                        status=event_data["status"],
-                        number_of_visitors=event_data.get("number_of_visitors", 0),
-                        created_at=datetime.fromisoformat(
-                            event_data["created_at"].replace("Z", "+00:00")
-                        ),
-                        status_changed_at=datetime.fromisoformat(
-                            event_data["status_changed_at"].replace("Z", "+00:00")
-                        ),
-                    )
-
-                await self.session.execute(stmt)
+                # Сохраняем событие (insert или update)
+                await self._save_event(event_data)
                 count += 1
 
                 if count % 10 == 0:
                     await self.session.commit()
-                    logger.info(f"Saved {count} events...")
+                    logger.info("Saved %d events...", count)
 
             await self.session.commit()
 
@@ -134,14 +72,14 @@ class SyncEventsService:
             )
             await self.metadata_repo.update(metadata)
 
-            logger.info(f"Sync completed. Total new/updated: {count} events")
-            logger.info(f"Last changed_at: {max_changed_at}")
+            logger.info("Sync completed. Total new/updated: %d events", count)
+            logger.info("Last changed_at: %s", max_changed_at)
 
             return count
 
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"Sync failed: {error_msg}", exc_info=True)
+            logger.error("Sync failed: %s", error_msg, exc_info=True)
 
             # Обновляем метаданные с ошибкой
             metadata.update_after_sync(
@@ -156,3 +94,60 @@ class SyncEventsService:
             raise
         finally:
             await self.client.close()
+
+    async def _save_event(self, event_data: dict) -> None:
+        """Сохранить одно событие (insert или update)"""
+        existing = await self.session.execute(
+            select(events_tbl).where(events_tbl.c.id == event_data["id"])
+        )
+        existing_row = existing.scalar_one_or_none()
+
+        if existing_row:
+            # Обновляем
+            stmt = (
+                update(events_tbl)
+                .where(events_tbl.c.id == event_data["id"])
+                .values(
+                    name=event_data["name"],
+                    place_id=event_data["place"]["id"],
+                    place_name=event_data["place"]["name"],
+                    place_city=event_data["place"]["city"],
+                    place_address=event_data["place"]["address"],
+                    place_seats_pattern=event_data["place"]["seats_pattern"],
+                    event_time=datetime.fromisoformat(
+                        event_data["event_time"].replace("Z", "+00:00")
+                    ),
+                    registration_deadline=datetime.fromisoformat(
+                        event_data["registration_deadline"].replace("Z", "+00:00")
+                    ),
+                    status=event_data["status"],
+                    number_of_visitors=event_data.get("number_of_visitors", 0),
+                )
+            )
+        else:
+            # Вставляем новое
+            stmt = insert(events_tbl).values(
+                id=event_data["id"],
+                name=event_data["name"],
+                place_id=event_data["place"]["id"],
+                place_name=event_data["place"]["name"],
+                place_city=event_data["place"]["city"],
+                place_address=event_data["place"]["address"],
+                place_seats_pattern=event_data["place"]["seats_pattern"],
+                event_time=datetime.fromisoformat(
+                    event_data["event_time"].replace("Z", "+00:00")
+                ),
+                registration_deadline=datetime.fromisoformat(
+                    event_data["registration_deadline"].replace("Z", "+00:00")
+                ),
+                status=event_data["status"],
+                number_of_visitors=event_data.get("number_of_visitors", 0),
+                created_at=datetime.fromisoformat(
+                    event_data["created_at"].replace("Z", "+00:00")
+                ),
+                status_changed_at=datetime.fromisoformat(
+                    event_data["status_changed_at"].replace("Z", "+00:00")
+                ),
+            )
+
+        await self.session.execute(stmt)

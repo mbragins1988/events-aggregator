@@ -2,8 +2,8 @@
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db_schema import sync_metadata_tbl
 from app.domain.models import SyncMetadata
+from app.infrastructure.db_schema import sync_metadata_tbl
 
 
 class SyncMetadataRepository:

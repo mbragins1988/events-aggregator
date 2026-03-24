@@ -1,10 +1,12 @@
 import logging
-from typing import List, Optional
 from datetime import date
-from sqlalchemy import select, func
+from typing import List, Optional
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.infrastructure.db_schema import events_tbl
+
 from app.domain.models import Event, EventStatus
+from app.infrastructure.db_schema import events_tbl
 
 logger = logging.getLogger(__name__)
 

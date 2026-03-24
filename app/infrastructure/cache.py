@@ -1,7 +1,7 @@
 # app/infrastructure/cache.py
-import time
 import logging
-from typing import Dict, Any, Optional
+import time
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

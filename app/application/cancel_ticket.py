@@ -1,12 +1,12 @@
-from typing import Protocol, Optional
 from datetime import datetime, timezone
+from typing import Optional, Protocol
 
-from app.domain.models import Event
 from app.domain.exceptions import (
+    EventAlreadyPassedError,
     EventNotFoundError,
     TicketNotFoundError,
-    EventAlreadyPassedError,
 )
+from app.domain.models import Event
 
 
 class EventRepository(Protocol):

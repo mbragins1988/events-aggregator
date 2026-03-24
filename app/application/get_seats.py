@@ -1,8 +1,8 @@
 # app/application/get_seats.py
 from typing import List, Optional, Protocol
 
-from app.domain.models import Event
 from app.domain.exceptions import EventNotFoundError
+from app.domain.models import Event
 from app.infrastructure.cache import seats_cache
 
 
