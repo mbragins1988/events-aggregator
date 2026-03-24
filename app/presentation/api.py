@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.celery_tasks import sync_events_task
 from app.application.cancel_ticket import CancelTicketUseCase
 from app.application.create_ticket import CreateTicketUseCase
 from app.application.get_events import GetEventsUseCase
@@ -142,22 +143,48 @@ async def get_event(
     )
 
 
-@router.post("/sync/trigger", status_code=200)
-async def trigger_sync(session: AsyncSession = Depends(get_db)):
+@router.post("/sync/trigger", status_code=202)  # 202 Accepted — асинхронная задача
+async def trigger_sync():
     """
     Ручной запуск синхронизации с Events Provider API.
-
-    Returns:
-        {"message": "Synchronized X events"}
+    
+    Задача ставится в очередь Celery и выполняется асинхронно.
     """
-    logger.info("Ручная проверка мероприятий")
-    try:
-        service = SyncEventsService(session)
-        logger.info("Успешный запрос на сервис")
-        count = await service.sync()
-        return {"message": f"Synchronized {count} events"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Отправляем задачу в Celery
+    task = sync_events_task.delay()
+    
+    return {
+        "message": "Sync task queued",
+        "task_id": task.id,
+        "status_url": f"/api/sync/status/{task.id}"
+    }
+
+
+@router.get("/sync/status/{task_id}")
+async def get_sync_status(task_id: str):
+    """
+    Получить статус задачи синхронизации.
+    """
+    from app.celery_app import celery_app
+    task = celery_app.AsyncResult(task_id)
+    
+    if task.pending:
+        status = "pending"
+    elif task.failed():
+        status = "failed"
+        result = str(task.info) if task.info else "Unknown error"
+    elif task.successful():
+        status = "success"
+        result = task.result
+    else:
+        status = "unknown"
+        result = None
+    
+    return {
+        "task_id": task_id,
+        "status": status,
+        "result": result
+    }
 
 
 @router.get("/events/{event_id}/seats", response_model=schemas.SeatsResponse)

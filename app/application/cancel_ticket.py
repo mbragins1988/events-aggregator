@@ -51,7 +51,7 @@ class CancelTicketUseCase:
         if not event:
             raise EventNotFoundError(f"Event {ticket['event_id']} not found")
 
-        # 3. Проверяем, не прошло ли событие (ИСПРАВЛЕНО)
+        # 3. Проверяем, не прошло ли событие
         if datetime.now(timezone.utc) > event.event_time:
             raise EventAlreadyPassedError("Cannot cancel registration for past event")
 

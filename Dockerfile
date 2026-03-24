@@ -31,7 +31,7 @@ RUN addgroup --system --gid 1000 appuser && \
     adduser --system --uid 1000 --ingroup appuser appuser && \
     chown -R appuser:appuser /app
 
-# Переключаемся на пользователя (все последующие команды будут от него)
+# Переключаемся на пользователя
 USER 1000
 
 # Запускаем через entrypoint
