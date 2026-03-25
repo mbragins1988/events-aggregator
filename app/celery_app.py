@@ -7,8 +7,6 @@ from app.config import settings
 # sqla+postgresql://user:pass@host/db
 broker_url = settings.SYNC_DATABASE_URL.replace("postgresql://", "sqla+postgresql://")
 result_backend = settings.SYNC_DATABASE_URL
-print(f"Broker URL: {broker_url}")
-print(f"Backend URL: {result_backend}")
 
 celery_app = Celery(
     "events_aggregator",
