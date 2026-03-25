@@ -11,7 +11,7 @@ from app.application.cancel_ticket import CancelTicketUseCase
 from app.application.create_ticket import CreateTicketUseCase
 from app.application.get_events import GetEventsUseCase
 from app.application.get_seats import GetSeatsUseCase
-from app.celery_tasks import sync_events_task
+from app.application.sync_events import SyncEventsService
 from app.config import settings
 from app.database import get_db
 from app.domain.exceptions import (
@@ -142,21 +142,16 @@ async def get_event(
     )
 
 
-@router.post("/sync/trigger", status_code=202)  # 202 Accepted — асинхронная задача
-async def trigger_sync():
+@router.post("/sync/trigger", status_code=200)
+async def trigger_sync(session: AsyncSession = Depends(get_db)):
     """
-    Ручной запуск синхронизации с Events Provider API.
-
-    Задача ставится в очередь Celery и выполняется асинхронно.
+    Ручной запуск синхронизации.
+    Выполняется синхронно, возвращает результат.
     """
-    # Отправляем задачу в Celery
-    task = sync_events_task.delay()
-
-    return {
-        "message": "Sync task queued",
-        "task_id": task.id,
-        "status_url": f"/api/sync/status/{task.id}",
-    }
+    logger.info("Manual sync triggered")
+    service = SyncEventsService(session)
+    count = await service.sync()
+    return {"message": f"Synchronized {count} events"}
 
 
 @router.get("/sync/status/{task_id}")
