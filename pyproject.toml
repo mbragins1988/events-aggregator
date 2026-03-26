@@ -6,21 +6,19 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     # База данных
-    "sqlalchemy[asyncio]>=2.0.48",
+    "sqlalchemy>=2.0.48",
     "asyncpg>=0.31.0",
     "alembic>=1.18.4",
-    
     # API
     "fastapi>=0.135.1",
     "uvicorn[standard]>=0.41.0",
     "httpx>=0.28.1",
     "python-dotenv>=1.2.2",
-    
     # Мониторинг
     "sentry-sdk>=2.55.0",
-    
     # Celery с PostgreSQL брокером
-    "celery[postgresql]>=5.3.0",
+    "celery>=5.3.0",
+    "psycopg2>=2.9.11",
     "psycopg2-binary>=2.9.11",
 ]
 
