@@ -1,11 +1,14 @@
 # app/main.py
+import asyncio
+from contextlib import asynccontextmanager
 import logging
 import sys
 
 from fastapi import FastAPI
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
-from app.celery_app import celery_app
 from app.presentation.api import router
+from app.presentation.sync_worker import run_scheduled_sync
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,8 +19,28 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Events Aggregator")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Управление жизненным циклом приложения"""
+    # Запускаем фоновую синхронизацию
+    logger.info("Starting scheduled sync worker...")
+    sync_task = asyncio.create_task(run_scheduled_sync(interval_hours=24))
+
+    yield
+
+    # Останавливаем воркер при завершении
+    logger.info("Stopping sync worker...")
+    sync_task.cancel()
+    try:
+        await sync_task
+    except asyncio.CancelledError:
+        pass
+    logger.info("Sync worker stopped")
+
+
+app = FastAPI(title="Events Aggregator", lifespan=lifespan)
+app.add_middleware(SentryAsgiMiddleware)
 app.include_router(router)
 
 
@@ -29,26 +52,3 @@ async def root():
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
-
-
-@router.get("/api/celery/status")
-async def celery_status():
-    """
-    Проверка статуса Celery воркера.
-    """
-    try:
-        # Отправляем тестовую задачу
-        inspect = celery_app.control.inspect()
-        stats = inspect.stats()
-
-        if stats:
-            workers = list(stats.keys())
-            return {
-                "status": "running",
-                "workers": workers,
-                "worker_count": len(workers),
-            }
-        else:
-            return {"status": "no_workers", "message": "No Celery workers running"}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
