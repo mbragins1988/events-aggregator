@@ -9,6 +9,8 @@ kube/
 docker-compose.yml
 .python-version
 test.py
+celery_tasks.py
+celery_app.py
 # alembic.ini
 
 # Virtual environments
