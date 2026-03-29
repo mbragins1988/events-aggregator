@@ -69,9 +69,8 @@ outbox_tbl = Table(
     metadata,
     Column("id", String, primary_key=True),
     Column("event_type", String, nullable=False),
-    Column("payload", JSON, nullable=False),  # ← теперь JSON импортирован
-    Column("status", String, nullable=False, default="pending"),
-    Column("attempts", Integer, default=0),
+    Column("payload", JSON, nullable=False),
+    Column("status", String, nullable=False, default="pending"),  # pending / sent
     Column("last_error", String, nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column("updated_at", DateTime(timezone=True), onupdate=func.now()),

@@ -6,6 +6,12 @@ load_dotenv()
 
 
 class Settings:
+    # Capashino (Notification Service)
+    CAPASHINO_BASE_URL: str = os.getenv("CAPASHINO_BASE_URL", "")
+
+    # Outbox настройки
+    OUTBOX_INTERVAL_SECONDS: int = int(os.getenv("OUTBOX_INTERVAL_SECONDS", "10"))
+
     # Database/
     POSTGRES_CONNECTION_STRING: str = os.getenv("POSTGRES_CONNECTION_STRING", "")
 
