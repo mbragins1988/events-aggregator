@@ -2,7 +2,6 @@ from datetime import date
 import logging
 from typing import AsyncGenerator, Optional
 from urllib.parse import urlencode
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +17,7 @@ from app.domain.exceptions import (
     EventAlreadyPassedError,
     EventNotFoundError,
     EventNotPublishedError,
+    IdempotencyConflictError,
     RegistrationDeadlinePassedError,
     SeatNotAvailableError,
     TicketCreationError,
@@ -206,18 +206,25 @@ async def get_event_seats(
 async def create_ticket(
     request: schemas.TicketCreateRequest, session: AsyncSession = Depends(get_db)
 ):
+    logger.info(f"Creating ticket for event {request.event_id}, seat {request.seat}")
+
+    # Валидация UUID
+    try:
+        UUID(request.event_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
     event_repo = EventRepository(session)
     ticket_repo = TicketRepository(session)
     api_client = EventsProviderClient(
         base_url=settings.CATALOG_BASE_URL, api_key=settings.API_TOKEN
     )
 
-    # Создаем use case с передачей session
     usecase = CreateTicketUseCase(
         event_repo=event_repo,
         ticket_repo=ticket_repo,
         api_client=api_client,
-        session=session,  # ← добавили
+        session=session,
     )
 
     try:
@@ -227,12 +234,15 @@ async def create_ticket(
             last_name=request.last_name,
             email=request.email,
             seat=request.seat,
+            idempotency_key=request.idempotency_key,  # ← передаем ключ
         )
 
         return schemas.TicketResponse(ticket_id=ticket_id)
 
     except EventNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except IdempotencyConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))  # ← 409 Conflict
     except (
         EventNotPublishedError,
         RegistrationDeadlinePassedError,

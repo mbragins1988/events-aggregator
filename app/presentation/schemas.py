@@ -62,16 +62,6 @@ class SeatsResponse(BaseModel):
     available_seats: List[str]
 
 
-class TicketCreateRequest(BaseModel):
-    """Запрос на создание билета (регистрацию)"""
-
-    event_id: str
-    first_name: str
-    last_name: str
-    email: str
-    seat: str
-
-
 class TicketResponse(BaseModel):
     """Ответ с созданным билетом"""
 
@@ -82,3 +72,14 @@ class CancelResponse(BaseModel):
     """Ответ на отмену регистрации"""
 
     success: bool
+
+
+class TicketCreateRequest(BaseModel):
+    """Запрос на создание билета (регистрацию)"""
+
+    event_id: str
+    first_name: str
+    last_name: str
+    email: str
+    seat: str
+    idempotency_key: Optional[str] = None

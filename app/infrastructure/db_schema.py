@@ -75,3 +75,14 @@ outbox_tbl = Table(
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column("updated_at", DateTime(timezone=True), onupdate=func.now()),
 )
+
+
+# Таблица идемпотентности
+idempotency_keys_tbl = Table(
+    "idempotency_keys",
+    metadata,
+    Column("key", String, primary_key=True),  # idempotency_key
+    Column("ticket_id", String, nullable=False),  # созданный ticket_id
+    Column("event_id", String, nullable=False),  # для проверки конфликтов
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
+)

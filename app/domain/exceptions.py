@@ -45,3 +45,9 @@ class EventAlreadyPassedError(DomainError):
     """Событие уже прошло"""
 
     pass
+
+
+class IdempotencyConflictError(DomainError):
+    """Конфликт идемпотентности — ключ уже использован с другими данными"""
+
+    pass
