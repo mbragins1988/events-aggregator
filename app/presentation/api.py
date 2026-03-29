@@ -2,6 +2,7 @@ from datetime import date
 import logging
 from typing import AsyncGenerator, Optional
 from urllib.parse import urlencode
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
