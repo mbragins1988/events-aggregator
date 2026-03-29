@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional, Protocol
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.domain.exceptions import (
     EventNotFoundError,
     EventNotPublishedError,
@@ -9,6 +11,7 @@ from app.domain.exceptions import (
     TicketCreationError,
 )
 from app.domain.models import Event
+from app.infrastructure.outbox_repository import OutboxRepository
 
 
 class EventRepository(Protocol):
@@ -44,13 +47,6 @@ class TicketRepository(Protocol):
 class CreateTicketUseCase:
     """
     Бизнес-логика регистрации на событие.
-
-    - Проверяет существование события в локальной БД
-    - Проверяет статус события (только для published)
-    - Проверяет дедлайн регистрации
-    - Проверяет доступность места (через API)
-    - Регистрирует через внешнее API
-    - Возвращает ticket_id
     """
 
     def __init__(
@@ -58,26 +54,18 @@ class CreateTicketUseCase:
         event_repo: EventRepository,
         api_client: EventsProviderClient,
         ticket_repo: TicketRepository,
+        session: AsyncSession,
     ):
         self.event_repo = event_repo
         self.api_client = api_client
         self.ticket_repo = ticket_repo
+        self.session = session  # ← сохраняем для outbox
 
     async def execute(
         self, event_id: str, first_name: str, last_name: str, email: str, seat: str
     ) -> str:
         """
         Выполнить регистрацию на событие.
-
-        Returns:
-            str: ticket_id
-
-        Raises:
-            EventNotFoundError: если событие не найдено
-            EventNotPublishedError: если событие не опубликовано
-            RegistrationDeadlinePassedError: если дедлайн прошел
-            SeatNotAvailableError: если место недоступно
-            TicketCreationError: если API вернул ошибку
         """
         # 1. Проверяем существование события
         event = await self.event_repo.get_by_id(event_id)
@@ -91,7 +79,7 @@ class CreateTicketUseCase:
             )
 
         # 3. Проверяем дедлайн
-        now = datetime.now(timezone.utc)  # теперь тоже с часовым поясом
+        now = datetime.now(timezone.utc)
         if now > event.registration_deadline:
             raise RegistrationDeadlinePassedError(
                 f"Registration deadline passed for event {event_id}"
@@ -114,9 +102,9 @@ class CreateTicketUseCase:
         )
 
         if not ticket_id:
-            raise TicketCreationError(...)
+            raise TicketCreationError(f"Failed to create ticket for event {event_id}")
 
-        # Сохраняем в своей БД
+        # 6. Сохраняем билет в своей БД
         await self.ticket_repo.create(
             ticket_id=ticket_id,
             event_id=event_id,
@@ -124,6 +112,21 @@ class CreateTicketUseCase:
             last_name=last_name,
             email=email,
             seat=seat,
+        )
+
+        # 7. Сохраняем в outbox для отправки уведомления
+        outbox_repo = OutboxRepository(self.session)
+        await outbox_repo.create(
+            event_type="ticket_created",
+            payload={
+                "ticket_id": ticket_id,
+                "event_id": event_id,
+                "event_name": event.name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "seat": seat,
+            },
         )
 
         return ticket_id

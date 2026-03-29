@@ -141,3 +141,27 @@ class SyncMetadata:
         self.total_events_synced += total_events
         self.last_sync_status = status
         self.last_error = error
+
+
+class OutboxEvent:
+    """Событие для outbox"""
+
+    def __init__(
+        self,
+        id: str,
+        event_type: str,
+        payload: dict,
+        status: str = "pending",
+        attempts: int = 0,
+        last_error: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ):
+        self.id = id
+        self.event_type = event_type
+        self.payload = payload
+        self.status = status
+        self.attempts = attempts
+        self.last_error = last_error
+        self.created_at = created_at
+        self.updated_at = updated_at

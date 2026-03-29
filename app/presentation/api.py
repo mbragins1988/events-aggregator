@@ -204,23 +204,20 @@ async def get_event_seats(
 
 @router.post("/tickets", response_model=schemas.TicketResponse, status_code=201)
 async def create_ticket(
-    request: schemas.TicketCreateRequest,
-    session: AsyncSession = Depends(get_db),
-    api_client: EventsProviderClient = Depends(
-        get_events_provider_client
-    ),  # ← добавили
+    request: schemas.TicketCreateRequest, session: AsyncSession = Depends(get_db)
 ):
-    # Валидация UUID
-    try:
-        UUID(request.event_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid UUID format")
-
     event_repo = EventRepository(session)
     ticket_repo = TicketRepository(session)
+    api_client = EventsProviderClient(
+        base_url=settings.CATALOG_BASE_URL, api_key=settings.API_TOKEN
+    )
 
+    # Создаем use case с передачей session
     usecase = CreateTicketUseCase(
-        event_repo=event_repo, ticket_repo=ticket_repo, api_client=api_client
+        event_repo=event_repo,
+        ticket_repo=ticket_repo,
+        api_client=api_client,
+        session=session,  # ← добавили
     )
 
     try:
@@ -231,8 +228,6 @@ async def create_ticket(
             email=request.email,
             seat=request.seat,
         )
-
-        logger.info(f"Ticket created successfully: {ticket_id}")
 
         return schemas.TicketResponse(ticket_id=ticket_id)
 
@@ -246,8 +241,10 @@ async def create_ticket(
     ) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Unexpected error in create_ticket: {e}", exc_info=True)
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        await api_client.close()
 
 
 @router.delete("/tickets/{ticket_id}", response_model=schemas.CancelResponse)

@@ -1,6 +1,6 @@
 # app/infrastructure/models.py
 # Описание таблиц в БД. Alembic будет использовать это для создания таблиц
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table
+from sqlalchemy import JSON, Column, DateTime, Integer, MetaData, String, Table
 from sqlalchemy.sql import func
 
 # Метаданные - нужны для Alembic
@@ -61,4 +61,18 @@ sync_metadata_tbl = Table(
         "last_sync_status", String, default="success"
     ),  # статус последней синхронизации
     Column("last_error", String, nullable=True),  # последняя ошибка
+)
+
+# Таблица outbox для гарантированной доставки уведомлений
+outbox_tbl = Table(
+    "outbox",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("event_type", String, nullable=False),
+    Column("payload", JSON, nullable=False),  # ← теперь JSON импортирован
+    Column("status", String, nullable=False, default="pending"),
+    Column("attempts", Integer, default=0),
+    Column("last_error", String, nullable=True),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
+    Column("updated_at", DateTime(timezone=True), onupdate=func.now()),
 )

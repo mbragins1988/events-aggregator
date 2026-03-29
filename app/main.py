@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from app.presentation.api import router
+from app.presentation.outbox_worker import outbox_worker
 from app.presentation.sync_worker import run_scheduled_sync
 
 logging.basicConfig(
@@ -23,20 +24,24 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
-    # Запускаем фоновую синхронизацию
+    # Запускаем фоновую синхронизацию (существующий воркер)
     logger.info("Starting scheduled sync worker...")
     sync_task = asyncio.create_task(run_scheduled_sync(interval_hours=24))
 
+    # Запускаем outbox воркер (новый)
+    outbox_worker.start()
+
     yield
 
-    # Останавливаем воркер при завершении
-    logger.info("Stopping sync worker...")
+    # Останавливаем воркеры
+    logger.info("Stopping workers...")
     sync_task.cancel()
+    await outbox_worker.stop()
     try:
         await sync_task
     except asyncio.CancelledError:
         pass
-    logger.info("Sync worker stopped")
+    logger.info("Workers stopped")
 
 
 app = FastAPI(title="Events Aggregator", lifespan=lifespan)
