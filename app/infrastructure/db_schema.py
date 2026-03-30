@@ -81,8 +81,12 @@ outbox_tbl = Table(
 idempotency_keys_tbl = Table(
     "idempotency_keys",
     metadata,
-    Column("key", String, primary_key=True),  # idempotency_key
-    Column("ticket_id", String, nullable=False),  # созданный ticket_id
-    Column("event_id", String, nullable=False),  # для проверки конфликтов
+    Column("key", String, primary_key=True),
+    Column("ticket_id", String, nullable=False),
+    Column("event_id", String, nullable=False),
+    Column("first_name", String, nullable=False),  # ← добавить
+    Column("last_name", String, nullable=False),  # ← добавить
+    Column("email", String, nullable=False),  # ← добавить
+    Column("seat", String, nullable=False),  # ← добавить
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )

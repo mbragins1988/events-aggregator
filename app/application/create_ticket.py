@@ -62,7 +62,7 @@ class CreateTicketUseCase:
         last_name: str,
         email: str,
         seat: str,
-        idempotency_key: Optional[str] = None,  # ← новый параметр
+        idempotency_key: Optional[str] = None,
     ) -> str:
         """
         Выполнить регистрацию с поддержкой идемпотентности.
@@ -72,13 +72,19 @@ class CreateTicketUseCase:
             existing = await self.idempotency_repo.get_result(idempotency_key)
 
             if existing:
-                # Проверяем, что данные совпадают (event_id)
-                if existing["event_id"] != event_id:
-                    # Тот же ключ, но другое событие → конфликт
+                # Проверяем ВСЕ данные, а не только event_id
+                if (
+                    existing["event_id"] != event_id
+                    or existing["first_name"] != first_name
+                    or existing["last_name"] != last_name
+                    or existing["email"] != email
+                    or existing["seat"] != seat
+                ):
+                    # Любое поле отличается → конфликт
                     raise IdempotencyConflictError(
-                        f"Idempotency key {idempotency_key} already used for different event"
+                        f"Idempotency key {idempotency_key} already used with different data"
                     )
-                # Возвращаем существующий ticket_id
+                # Все данные совпадают → возвращаем существующий билет
                 return existing["ticket_id"]
 
         # 2. Обычная логика регистрации
@@ -144,6 +150,10 @@ class CreateTicketUseCase:
                 key=idempotency_key,
                 ticket_id=ticket_id,
                 event_id=event_id,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                seat=seat,
             )
             if not saved:
                 # Ключ уже существует (другая операция успела завершиться)
