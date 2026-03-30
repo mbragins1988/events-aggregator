@@ -84,9 +84,9 @@ idempotency_keys_tbl = Table(
     Column("key", String, primary_key=True),
     Column("ticket_id", String, nullable=False),
     Column("event_id", String, nullable=False),
-    Column("first_name", String, nullable=False),  # ← добавить
-    Column("last_name", String, nullable=False),  # ← добавить
-    Column("email", String, nullable=False),  # ← добавить
-    Column("seat", String, nullable=False),  # ← добавить
+    Column("first_name", String, nullable=True),
+    Column("last_name", String, nullable=True),
+    Column("email", String, nullable=True),
+    Column("seat", String, nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
