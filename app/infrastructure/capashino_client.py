@@ -1,6 +1,4 @@
-# app/infrastructure/capashino_client.py
 import logging
-from typing import Optional
 
 import httpx
 
@@ -50,7 +48,8 @@ class CapashinoClient:
                 return True
             else:
                 logger.error(
-                    f"Capashino API error: {response.status_code} - {response.text}"
+                    f"Capashino API error:"
+                    f"{response.status_code} - {response.text}"
                 )
                 return False
 

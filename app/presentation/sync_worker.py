@@ -18,7 +18,9 @@ async def run_scheduled_sync(interval_hours: int = 24):
             async with AsyncSessionLocal() as session:
                 service = SyncEventsService(session)
                 count = await service.sync()
-                logger.info(f"Scheduled sync completed. {count} events updated.")
+                logger.info(
+                    f"Scheduled sync completed. {count} events updated."
+                )
         except Exception as e:
             logger.error(f"Scheduled sync failed: {e}", exc_info=True)
 

@@ -24,7 +24,7 @@ class OutboxWorker:
         event_name = payload.get("event_name", "мероприятие")
         message = f"Вы успешно зарегистрированы на мероприятие - {event_name}"
         reference_id = payload.get("ticket_id")
-        idempotency_key = event.id  # используем outbox event id
+        idempotency_key = event.id  # outbox event id
 
         async with CapashinoClient(
             base_url=settings.CAPASHINO_BASE_URL, api_key=settings.API_TOKEN
@@ -47,7 +47,9 @@ class OutboxWorker:
 
     async def _run(self):
         """Основной цикл воркера"""
-        logger.info(f"Outbox worker started. Interval: {self.interval_seconds}s")
+        logger.info(
+            f"Outbox worker started. Interval: {self.interval_seconds}s"
+        )
 
         while self._running:
             try:
@@ -56,7 +58,9 @@ class OutboxWorker:
                     pending = await repo.get_pending(limit=10)
 
                     if pending:
-                        logger.info(f"Found {len(pending)} pending outbox events")
+                        logger.info(
+                            f"Found {len(pending)} pending outbox events"
+                        )
 
                         for event in pending:
                             try:
@@ -64,19 +68,24 @@ class OutboxWorker:
 
                                 if success:
                                     await repo.mark_sent(event.id)
-                                    logger.info(f"Outbox event {event.id} sent")
+                                    logger.info(
+                                        f"Outbox event {event.id} sent"
+                                    )
                                 else:
                                     await repo.mark_failed(
-                                        event.id, "Capashino API returned error"
+                                        event.id,
+                                        "Capashino API returned error",
                                     )
                                     logger.warning(
-                                        f"Outbox event {event.id} failed, will retry later"
+                                        f"Outbox event {event.id}"
+                                        f"failed, will retry later"
                                     )
 
                             except Exception as e:
                                 error_msg = str(e)
                                 logger.error(
-                                    f"Error processing outbox event {event.id}: {error_msg}"
+                                    f"Error processing outbox event"
+                                    f"{event.id}: {error_msg}"
                                 )
                                 await repo.mark_failed(event.id, error_msg)
                     else:

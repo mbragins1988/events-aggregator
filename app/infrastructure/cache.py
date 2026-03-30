@@ -1,7 +1,6 @@
-# app/infrastructure/cache.py
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +9,10 @@ class TTLCache:
     """Простой кэш с временем жизни (TTL)"""
 
     def __init__(self, ttl_seconds: int = 30):
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
         self.ttl = ttl_seconds
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Получить значение из кэша, если оно не истекло"""
         if key in self._cache:
             item = self._cache[key]

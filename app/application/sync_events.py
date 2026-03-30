@@ -47,14 +47,13 @@ class SyncEventsService:
             async for event_data in paginator:
                 # Определяем changed_at события
                 event_changed_at = datetime.fromisoformat(
-                    event_data.get("changed_at", event_data["created_at"]).replace(
-                        "Z", "+00:00"
-                    )
+                    event_data.get(
+                        "changed_at", event_data["created_at"]
+                    ).replace("Z", "+00:00")
                 )
 
                 # Обновляем максимальную дату
-                if event_changed_at > max_changed_at:
-                    max_changed_at = event_changed_at
+                max_changed_at = max(max_changed_at, event_changed_at)
 
                 # Сохраняем событие (insert или update)
                 await self._save_event(event_data)
@@ -68,7 +67,9 @@ class SyncEventsService:
 
             # 4. Обновляем метаданные
             metadata.update_after_sync(
-                max_changed_at=max_changed_at, total_events=count, status="success"
+                max_changed_at=max_changed_at,
+                total_events=count,
+                status="success",
             )
             await self.metadata_repo.update(metadata)
 
@@ -118,7 +119,9 @@ class SyncEventsService:
                         event_data["event_time"].replace("Z", "+00:00")
                     ),
                     registration_deadline=datetime.fromisoformat(
-                        event_data["registration_deadline"].replace("Z", "+00:00")
+                        event_data["registration_deadline"].replace(
+                            "Z", "+00:00"
+                        )
                     ),
                     status=event_data["status"],
                     number_of_visitors=event_data.get("number_of_visitors", 0),

@@ -1,7 +1,4 @@
-# app/presentation/schemas.py
-# Схемы для валидации и сериализации API запросов/ответов.
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -50,16 +47,16 @@ class EventsListResponse(BaseModel):
     """Ответ со списком событий (с пагинацией)"""
 
     count: int
-    next: Optional[str]
-    previous: Optional[str]
-    results: List[EventResponse]
+    next: str | None
+    previous: str | None
+    results: list[EventResponse]
 
 
 class SeatsResponse(BaseModel):
     """Ответ со списком свободных мест"""
 
     event_id: str
-    available_seats: List[str]
+    available_seats: list[str]
 
 
 class TicketResponse(BaseModel):
@@ -82,4 +79,4 @@ class TicketCreateRequest(BaseModel):
     last_name: str
     email: str
     seat: str
-    idempotency_key: Optional[str] = None
+    idempotency_key: str | None = None

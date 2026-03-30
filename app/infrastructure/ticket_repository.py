@@ -1,6 +1,3 @@
-# app/infrastructure/ticket_repository.py
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,7 +29,7 @@ class TicketRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-    async def get_by_id(self, ticket_id: str) -> Optional[dict]:
+    async def get_by_id(self, ticket_id: str) -> dict | None:
         """Получить билет по ID"""
         query = select(tickets_tbl).where(tickets_tbl.c.id == ticket_id)
         result = await self.session.execute(query)

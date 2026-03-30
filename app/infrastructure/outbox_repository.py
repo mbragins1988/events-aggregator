@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-from typing import List
 import uuid
 
 from sqlalchemy import select, update
@@ -30,7 +29,7 @@ class OutboxRepository:
         logger.debug(f"Outbox event created: {event_id}")
         return event_id
 
-    async def get_pending(self, limit: int = 10) -> List[OutboxEvent]:
+    async def get_pending(self, limit: int = 10) -> list[OutboxEvent]:
         """Получить неотправленные события"""
         query = (
             select(outbox_tbl)

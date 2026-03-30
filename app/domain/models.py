@@ -1,7 +1,8 @@
-# app/domain/models.py
+import logging
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class EventStatus(str, Enum):
@@ -13,8 +14,7 @@ class EventStatus(str, Enum):
     @classmethod
     def _missing_(cls, value):
         # Любой неизвестный статус логируем, но не падаем
-        print(f"Warning: Unknown event status '{value}'")
-        return None
+        logger.info(f"Warning: Unknown event status '{value}'")
 
 
 class Event:
@@ -77,7 +77,7 @@ class Ticket:
         last_name: str,
         email: str,
         seat: str,
-        created_at: Optional[datetime] = None,
+        created_at: datetime | None = None,
     ):
         self.id = id
         self.event_id = event_id
@@ -107,11 +107,11 @@ class SyncMetadata:
     def __init__(
         self,
         id: str = "singleton",
-        last_changed_at: Optional[datetime] = None,
-        last_sync_time: Optional[datetime] = None,
+        last_changed_at: datetime | None = None,
+        last_sync_time: datetime | None = None,
         total_events_synced: int = 0,
         last_sync_status: str = "success",
-        last_error: Optional[str] = None,
+        last_error: str | None = None,
     ):
         self.id = id
         self.last_changed_at = last_changed_at
@@ -133,7 +133,7 @@ class SyncMetadata:
         max_changed_at: datetime,
         total_events: int,
         status: str = "success",
-        error: Optional[str] = None,
+        error: str | None = None,
     ):
         """Обновить метаданные после синхронизации"""
         self.last_changed_at = max_changed_at
@@ -150,9 +150,9 @@ class OutboxEvent:
         event_type: str,
         payload: dict,
         status: str = "pending",
-        last_error: Optional[str] = None,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
+        last_error: str | None = None,
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None,
     ):
         self.id = id
         self.event_type = event_type

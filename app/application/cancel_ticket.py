@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, Protocol
+from typing import Protocol
 
 from app.domain.exceptions import (
     EventAlreadyPassedError,
@@ -24,7 +24,7 @@ class EventsProviderClient(Protocol):
 
 
 class TicketRepository(Protocol):
-    async def get_by_id(self, ticket_id: str) -> Optional[dict]: ...
+    async def get_by_id(self, ticket_id: str) -> dict | None: ...
 
     async def delete(self, ticket_id: str): ...
 
@@ -53,10 +53,14 @@ class CancelTicketUseCase:
 
         # 3. Проверяем, не прошло ли событие
         if datetime.now(timezone.utc) > event.event_time:
-            raise EventAlreadyPassedError("Cannot cancel registration for past event")
+            raise EventAlreadyPassedError(
+                "Cannot cancel registration for past event"
+            )
 
         # 4. Отменяем через API
-        success = await self.api_client.unregister(ticket["event_id"], ticket_id)
+        success = await self.api_client.unregister(
+            ticket["event_id"], ticket_id
+        )
 
         if not success:
             return False

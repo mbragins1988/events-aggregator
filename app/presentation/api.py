@@ -1,6 +1,6 @@
+from collections.abc import AsyncGenerator
 from datetime import date
 import logging
-from typing import AsyncGenerator, Optional
 from urllib.parse import urlencode
 from uuid import UUID
 
@@ -34,7 +34,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["events"])
 
 
-async def get_events_provider_client() -> AsyncGenerator[EventsProviderClient, None]:
+async def get_events_provider_client() -> AsyncGenerator[
+    EventsProviderClient, None
+]:
     """Dependency для получения клиента Events Provider API"""
     client = EventsProviderClient(
         base_url=settings.CATALOG_BASE_URL, api_key=settings.API_TOKEN
@@ -45,18 +47,22 @@ async def get_events_provider_client() -> AsyncGenerator[EventsProviderClient, N
         await client.close()
 
 
-def get_events_usecase(session: AsyncSession = Depends(get_db)) -> GetEventsUseCase:
+def get_events_usecase(
+    session: AsyncSession = Depends(get_db),
+) -> GetEventsUseCase:
     repo = EventRepository(session)
     return GetEventsUseCase(repo)
 
 
-def get_event_repository(session: AsyncSession = Depends(get_db)) -> EventRepository:
+def get_event_repository(
+    session: AsyncSession = Depends(get_db),
+) -> EventRepository:
     return EventRepository(session)
 
 
 @router.get("/events", response_model=schemas.EventsListResponse)
 async def get_events(
-    date_from: Optional[date] = Query(None, description="События после даты"),
+    date_from: date | None = Query(None, description="События после даты"),
     page: int = Query(1, ge=1, description="Номер страницы"),
     page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
     usecase: GetEventsUseCase = Depends(get_events_usecase),
@@ -69,11 +75,13 @@ async def get_events(
     - **page_size**: размер страницы (макс 100)
     """
 
-    result = await usecase.execute(date_from=date_from, page=page, page_size=page_size)
+    result = await usecase.execute(
+        date_from=date_from, page=page, page_size=page_size
+    )
 
     base_url = "/api/events"
 
-    def build_url(p: int) -> Optional[str]:
+    def build_url(p: int) -> str | None:
         if p < 1 or p > result["total_pages"]:
             return None
 
@@ -185,7 +193,7 @@ async def get_event_seats(
     session: AsyncSession = Depends(get_db),
     api_client: EventsProviderClient = Depends(
         get_events_provider_client
-    ),  # ← добавили
+    ),
 ):
     event_repo = EventRepository(session)
 
@@ -203,11 +211,16 @@ async def get_event_seats(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/tickets", response_model=schemas.TicketResponse, status_code=201)
+@router.post(
+    "/tickets", response_model=schemas.TicketResponse, status_code=201
+)
 async def create_ticket(
-    request: schemas.TicketCreateRequest, session: AsyncSession = Depends(get_db)
+    request: schemas.TicketCreateRequest,
+    session: AsyncSession = Depends(get_db),
 ):
-    logger.info(f"Creating ticket for event {request.event_id}, seat {request.seat}")
+    logger.info(
+        f"Creating ticket for event {request.event_id}, seat {request.seat}"
+    )
 
     # Валидация UUID
     try:
@@ -235,7 +248,7 @@ async def create_ticket(
             last_name=request.last_name,
             email=request.email,
             seat=request.seat,
-            idempotency_key=request.idempotency_key,  # ← передаем ключ
+            idempotency_key=request.idempotency_key,
         )
 
         return schemas.TicketResponse(ticket_id=ticket_id)
@@ -243,7 +256,7 @@ async def create_ticket(
     except EventNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except IdempotencyConflictError as e:
-        raise HTTPException(status_code=409, detail=str(e))  # ← 409 Conflict
+        raise HTTPException(status_code=409, detail=str(e))
     except (
         EventNotPublishedError,
         RegistrationDeadlinePassedError,
@@ -264,7 +277,7 @@ async def cancel_ticket(
     session: AsyncSession = Depends(get_db),
     api_client: EventsProviderClient = Depends(
         get_events_provider_client
-    ),  # ← добавили
+    ),
 ):
     ticket_repo = TicketRepository(session)
     event_repo = EventRepository(session)

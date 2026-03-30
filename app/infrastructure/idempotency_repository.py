@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
@@ -42,9 +41,11 @@ class IdempotencyRepository:
             await self.session.rollback()
             return False
 
-    async def get_result(self, key: str) -> Optional[dict]:
+    async def get_result(self, key: str) -> dict | None:
         """Получить сохраненный результат по ключу"""
-        query = select(idempotency_keys_tbl).where(idempotency_keys_tbl.c.key == key)
+        query = select(idempotency_keys_tbl).where(
+            idempotency_keys_tbl.c.key == key
+        )
         result = await self.session.execute(query)
         row = result.first()
 

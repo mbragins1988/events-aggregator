@@ -26,9 +26,12 @@ dev = [
     "pytest-mock>=3.15.1",
 ]
 
+[tool.ruff]
+line-length = 79 
+
 [tool.ruff.lint]
-select = ["I"]
-extend-select = ["I"]
+extend-select = ["I", "E501", "E301", "E302", "E303"]
+preview = true
 
 [tool.ruff.lint.isort]
 known-third-party = ["pytest", "pytest_asyncio", "pytest_mock"]
@@ -42,3 +45,7 @@ section-order = [
 lines-between-types = 1
 force-sort-within-sections = true
 force-single-line = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

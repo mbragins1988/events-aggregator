@@ -1,4 +1,3 @@
-# app/main.py
 import asyncio
 from contextlib import asynccontextmanager
 import logging

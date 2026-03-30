@@ -1,5 +1,4 @@
-# app/application/get_seats.py
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from app.domain.exceptions import EventNotFoundError
 from app.domain.models import Event
@@ -9,13 +8,13 @@ from app.infrastructure.cache import seats_cache
 class EventRepository(Protocol):
     """Интерфейс репозитория событий"""
 
-    async def get_by_id(self, event_id: str) -> Optional[Event]: ...
+    async def get_by_id(self, event_id: str) -> Event | None: ...
 
 
 class EventsProviderClient(Protocol):
     """Интерфейс клиента внешнего API"""
 
-    async def get_seats(self, event_id: str) -> List[str]: ...
+    async def get_seats(self, event_id: str) -> list[str]: ...
 
     async def close(self): ...
 
@@ -31,11 +30,13 @@ class GetSeatsUseCase:
     - Кэширует результат на 30 секунд
     """
 
-    def __init__(self, event_repo: EventRepository, api_client: EventsProviderClient):
+    def __init__(
+        self, event_repo: EventRepository, api_client: EventsProviderClient
+    ):
         self.event_repo = event_repo
         self.api_client = api_client
 
-    async def execute(self, event_id: str) -> List[str]:
+    async def execute(self, event_id: str) -> list[str]:
         """
         Выполнить бизнес-логику получения мест.
 
@@ -66,10 +67,10 @@ class GetSeatsUseCase:
             try:
                 seats = await self.api_client.get_seats(event_id)
             finally:
-                # 5. Всегда закрываем соединение с клиентом
+                # 5. Закрываем соединение с клиентом
                 await self.api_client.close()
 
-        # 6. Сохраняем в кэш (даже пустой список, чтобы не долбить API)
+        # 6. Сохраняем в кэш (даже пустой список)
         seats_cache.set(cache_key, seats)
 
         return seats

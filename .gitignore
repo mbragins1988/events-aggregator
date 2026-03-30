@@ -11,6 +11,7 @@ docker-compose.yml
 test.py
 celery_tasks.py
 celery_app.py
+events_provider_client_sync.py
 # alembic.ini
 
 # Virtual environments

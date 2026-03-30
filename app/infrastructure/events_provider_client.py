@@ -1,7 +1,6 @@
-# app/infrastructure/events_provider_client.py
 from datetime import date
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 
@@ -17,8 +16,8 @@ class EventsProviderClient:
         self._client = httpx.AsyncClient(timeout=30.0)
 
     async def get_events_page(
-        self, changed_at: date, cursor: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, changed_at: date, cursor: str | None = None
+    ) -> dict[str, Any]:
         """
         Получить ОДНУ страницу событий.
 
@@ -46,18 +45,21 @@ class EventsProviderClient:
             return response.json()
 
         except httpx.HTTPStatusError as e:
-            # Используем %s вместо f-строки
-            logger.error("Events API HTTP ошибка %s: %s", e.response.status_code, e)
+            logger.error(
+                "Events API HTTP ошибка %s: %s", e.response.status_code, e
+            )
             return {"next": None, "previous": None, "results": []}
         except httpx.RequestError as e:
             logger.error("Events API ошибка подключения: %s", e)
             return {"next": None, "previous": None, "results": []}
 
-    async def get_event(self, event_id: str) -> Optional[Dict[str, Any]]:
+    async def get_event(self, event_id: str) -> dict[str, Any] | None:
         """Получить конкретное событие"""
         url = f"{self._base_url}/api/events/{event_id}/"
         try:
-            response = await self._client.get(url, headers={"x-api-key": self._api_key})
+            response = await self._client.get(
+                url, headers={"x-api-key": self._api_key}
+            )
 
             if response.status_code == 200:
                 return response.json()
@@ -71,11 +73,13 @@ class EventsProviderClient:
             logger.error("Events API ошибка подключения: %s", e)
             return None
 
-    async def get_seats(self, event_id: str) -> List[str]:
+    async def get_seats(self, event_id: str) -> list[str]:
         """Получить свободные места на событии"""
         url = f"{self._base_url}/api/events/{event_id}/seats/"
         try:
-            response = await self._client.get(url, headers={"x-api-key": self._api_key})
+            response = await self._client.get(
+                url, headers={"x-api-key": self._api_key}
+            )
 
             if response.status_code == 200:
                 data = response.json()
@@ -89,8 +93,13 @@ class EventsProviderClient:
             return []
 
     async def register(
-        self, event_id: str, first_name: str, last_name: str, email: str, seat: str
-    ) -> Optional[str]:
+        self,
+        event_id: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        seat: str,
+    ) -> str | None:
         """
         Зарегистрироваться на событие.
 
@@ -113,12 +122,14 @@ class EventsProviderClient:
                 },
             )
 
-            if response.status_code == 200:  # было 201
+            if response.status_code == 200:
                 data = response.json()
                 return data.get("ticket_id")
             else:
                 logger.error(
-                    "Events API ошибка: %s - %s", response.status_code, response.text
+                    "Events API ошибка: %s - %s",
+                    response.status_code,
+                    response.text,
                 )
                 return None
 
@@ -145,7 +156,9 @@ class EventsProviderClient:
                 return data.get("success", False)
             else:
                 logger.error(
-                    "Events API ошибка: %s - %s", response.status_code, response.text
+                    "Events API ошибка: %s - %s",
+                    response.status_code,
+                    response.text,
                 )
                 return False
 

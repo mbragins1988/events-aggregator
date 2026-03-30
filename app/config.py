@@ -10,10 +10,14 @@ class Settings:
     CAPASHINO_BASE_URL: str = os.getenv("CAPASHINO_BASE_URL", "")
 
     # Outbox настройки
-    OUTBOX_INTERVAL_SECONDS: int = int(os.getenv("OUTBOX_INTERVAL_SECONDS", "10"))
+    OUTBOX_INTERVAL_SECONDS: int = int(
+        os.getenv("OUTBOX_INTERVAL_SECONDS", "10")
+    )
 
     # Database/
-    POSTGRES_CONNECTION_STRING: str = os.getenv("POSTGRES_CONNECTION_STRING", "")
+    POSTGRES_CONNECTION_STRING: str = os.getenv(
+        "POSTGRES_CONNECTION_STRING", ""
+    )
 
     # API
     API_TOKEN: str = os.getenv("API_TOKEN", "")
@@ -34,7 +38,9 @@ class Settings:
     @property
     def SYNC_DATABASE_URL(self) -> str:
         """Синхронный URL для Alembic"""
-        return self.POSTGRES_CONNECTION_STRING.replace("postgres://", "postgresql://")
+        return self.POSTGRES_CONNECTION_STRING.replace(
+            "postgres://", "postgresql://"
+        )
 
 
 settings = Settings()

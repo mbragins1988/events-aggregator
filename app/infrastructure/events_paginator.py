@@ -1,7 +1,6 @@
-# app/infrastructure/events_paginator.py
 from datetime import date
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +9,8 @@ class EventsPaginator:
     def __init__(self, client, changed_at: date):
         self._client = client
         self._changed_at = changed_at
-        self._cursor: Optional[str] = None
-        self._current_page: Optional[Dict[str, Any]] = None
+        self._cursor: str | None = None
+        self._current_page: dict[str, Any] | None = None
         self._current_index: int = 0
         self._done: bool = False
 
@@ -52,7 +51,9 @@ class EventsPaginator:
 
     async def _load_next_page(self):
         """Загружает следующую страницу"""
-        page = await self._client.get_events_page(self._changed_at, self._cursor)
+        page = await self._client.get_events_page(
+            self._changed_at, self._cursor
+        )
 
         results = page.get("results", [])
 

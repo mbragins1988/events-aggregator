@@ -5,7 +5,9 @@ from app.config import settings
 
 # Синхронный движок для Alembic и скриптов
 sync_engine = create_engine(settings.SYNC_DATABASE_URL)
-SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+SyncSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=sync_engine
+)
 
 
 def get_sync_db():

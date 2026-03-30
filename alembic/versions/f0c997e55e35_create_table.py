@@ -6,7 +6,7 @@ Create Date: 2026-03-30 13:13:11.198195
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 
@@ -14,9 +14,9 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "f0c997e55e35"
-down_revision: Union[str, Sequence[str], None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -32,7 +32,9 @@ def upgrade() -> None:
         sa.Column("place_address", sa.String(), nullable=False),
         sa.Column("place_seats_pattern", sa.String(), nullable=False),
         sa.Column("event_time", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("registration_deadline", sa.DateTime(timezone=True), nullable=False),
+        sa.Column(
+            "registration_deadline", sa.DateTime(timezone=True), nullable=False
+        ),
         sa.Column("status", sa.String(), nullable=False),
         sa.Column("number_of_visitors", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
@@ -80,7 +82,9 @@ def upgrade() -> None:
     op.create_table(
         "sync_metadata",
         sa.Column("id", sa.String(), nullable=False),
-        sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "last_changed_at", sa.DateTime(timezone=True), nullable=True
+        ),
         sa.Column(
             "last_sync_time",
             sa.DateTime(timezone=True),

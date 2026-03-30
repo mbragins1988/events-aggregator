@@ -1,7 +1,5 @@
-# Бизнес-логика конкретной операции. Координирует работу, но не знает откуда данные.
-# Валидирует параметры. Просит репозиторий дать данные. Возвращает результат
 from datetime import date
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from app.domain.models import Event
 
@@ -12,12 +10,15 @@ class EventRepository(Protocol):
     """
 
     async def get_all(
-        self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0
-    ) -> List[Event]:
+        self,
+        date_from: date | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Event]:
         """Получить список событий"""
         ...
 
-    async def count(self, date_from: Optional[date] = None) -> int:
+    async def count(self, date_from: date | None = None) -> int:
         """Получить общее количество"""
         ...
 
@@ -30,7 +31,10 @@ class GetEventsUseCase:
         self.event_repo = event_repo
 
     async def execute(
-        self, date_from: Optional[date] = None, page: int = 1, page_size: int = 20
+        self,
+        date_from: date | None = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> dict:
         """
         Выполнить бизнес-логику:
@@ -39,8 +43,7 @@ class GetEventsUseCase:
         3. Вернуть результат с метаданными пагинации
         """
         # Валидация входных данных
-        if page < 1:
-            page = 1
+        page = max(page, 1)
         if page_size < 1:
             page_size = 20
         if page_size > 100:  # Ограничиваем размер страницы

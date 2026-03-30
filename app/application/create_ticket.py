@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, Protocol
+from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,14 +17,20 @@ from app.infrastructure.outbox_repository import OutboxRepository
 
 
 class EventRepository(Protocol):
-    async def get_by_id(self, event_id: str) -> Optional[Event]: ...
+    async def get_by_id(self, event_id: str) -> Event | None: ...
 
 
 class EventsProviderClient(Protocol):
     async def get_seats(self, event_id: str) -> list[str]: ...
+
     async def register(
-        self, event_id: str, first_name: str, last_name: str, email: str, seat: str
-    ) -> Optional[str]: ...
+        self,
+        event_id: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        seat: str,
+    ) -> str | None: ...
     async def close(self): ...
 
 
@@ -62,12 +68,13 @@ class CreateTicketUseCase:
         last_name: str,
         email: str,
         seat: str,
-        idempotency_key: Optional[str] = None,
+        idempotency_key: str | None = None,
     ) -> str:
         """
         Выполнить регистрацию с поддержкой идемпотентности.
         """
-        # 1. Если передан ключ идемпотентности — проверяем, не обрабатывали ли уже
+        # 1. Если передан ключ идемпотентности —
+        # проверяем, не обрабатывали ли уже
         if idempotency_key:
             existing = await self.idempotency_repo.get_result(idempotency_key)
 
@@ -82,7 +89,8 @@ class CreateTicketUseCase:
                 ):
                     # Любое поле отличается → конфликт
                     raise IdempotencyConflictError(
-                        f"Idempotency key {idempotency_key} already used with different data"
+                        f"Idempotency key {idempotency_key}"
+                        "already used with different data"
                     )
                 # Все данные совпадают → возвращаем существующий билет
                 return existing["ticket_id"]
@@ -118,7 +126,9 @@ class CreateTicketUseCase:
         )
 
         if not ticket_id:
-            raise TicketCreationError(f"Failed to create ticket for event {event_id}")
+            raise TicketCreationError(
+                f"Failed to create ticket for event {event_id}"
+            )
 
         # 3. Сохраняем билет
         await self.ticket_repo.create(
@@ -158,7 +168,9 @@ class CreateTicketUseCase:
             if not saved:
                 # Ключ уже существует (другая операция успела завершиться)
                 # Получаем существующий результат и возвращаем его
-                existing = await self.idempotency_repo.get_result(idempotency_key)
+                existing = await self.idempotency_repo.get_result(
+                    idempotency_key
+                )
                 if existing:
                     return existing["ticket_id"]
                 raise IdempotencyConflictError("Idempotency key conflict")

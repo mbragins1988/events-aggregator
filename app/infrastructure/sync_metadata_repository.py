@@ -1,4 +1,3 @@
-# app/infrastructure/sync_metadata_repository.py
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +11,9 @@ class SyncMetadataRepository:
 
     async def get(self) -> SyncMetadata:
         """Получить метаданные синхронизации (всегда одна запись)"""
-        query = select(sync_metadata_tbl).where(sync_metadata_tbl.c.id == "singleton")
+        query = select(sync_metadata_tbl).where(
+            sync_metadata_tbl.c.id == "singleton"
+        )
         result = await self.session.execute(query)
         row = result.first()
 

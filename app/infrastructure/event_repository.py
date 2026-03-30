@@ -1,6 +1,5 @@
 from datetime import date
 import logging
-from typing import List, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +14,7 @@ class EventRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, event_id: str) -> Optional[Event]:
+    async def get_by_id(self, event_id: str) -> Event | None:
         """Получить событие по ID"""
         logger.info(f"Repository getting event by id: {event_id}")
 
@@ -27,7 +26,9 @@ class EventRepository:
             logger.info(f"Событий с  id: {event_id} ненайдено")
             return None
 
-        logger.info(f"Raw row data: id={row.id}, name={row.name}, status={row.status}")
+        logger.info(
+            f"Raw row data: id={row.id}, name={row.name}, status={row.status}"
+        )
 
         try:
             event = Event(
@@ -46,7 +47,7 @@ class EventRepository:
                 status_changed_at=row.status_changed_at,
             )
             logger.info(
-                f"Successfully created Event object with status: {event.status}"
+                f"Successfully created Event object status: {event.status}"
             )
             return event
         except Exception as e:
@@ -54,12 +55,17 @@ class EventRepository:
             raise
 
     async def get_all(
-        self, date_from: Optional[date] = None, limit: int = 20, offset: int = 0
-    ) -> List[Event]:
+        self,
+        date_from: date | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[Event]:
         query = select(events_tbl)
 
         if date_from:
-            query = query.where(func.date(events_tbl.c.event_time) >= date_from)
+            query = query.where(
+                func.date(events_tbl.c.event_time) >= date_from
+            )
 
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
@@ -87,11 +93,13 @@ class EventRepository:
 
         return events
 
-    async def count(self, date_from: Optional[date] = None) -> int:
+    async def count(self, date_from: date | None = None) -> int:
         query = select(func.count()).select_from(events_tbl)
 
         if date_from:
-            query = query.where(func.date(events_tbl.c.event_time) >= date_from)
+            query = query.where(
+                func.date(events_tbl.c.event_time) >= date_from
+            )
 
         result = await self.session.execute(query)
         return result.scalar() or 0
