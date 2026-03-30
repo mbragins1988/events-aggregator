@@ -9,7 +9,7 @@ from app.infrastructure.events_paginator import EventsPaginator
 class TestEventsPaginator:
     @pytest.mark.asyncio
     async def test_simple_iteration(self):
-        """Тест: простое получение одного события"""
+        """Тест: простое получение одного события."""
         mock_client = AsyncMock()
         mock_client.get_events_page.return_value = {
             "next": None,
