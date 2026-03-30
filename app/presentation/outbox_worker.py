@@ -27,7 +27,7 @@ class OutboxWorker:
         idempotency_key = event.id  # используем outbox event id
 
         async with CapashinoClient(
-            base_url=settings.CAPASHINO_BASE_URL, api_key=settings.CAPASHINO_API_TOKEN
+            base_url=settings.CAPASHINO_BASE_URL, api_key=settings.API_TOKEN
         ) as client:
             return await client.send_notification(
                 message=message,

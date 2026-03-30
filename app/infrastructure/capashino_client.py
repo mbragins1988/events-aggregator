@@ -1,5 +1,6 @@
 # app/infrastructure/capashino_client.py
 import logging
+from typing import Optional
 
 import httpx
 
@@ -14,20 +15,18 @@ class CapashinoClient:
         self._api_key = api_key
         self._client = httpx.AsyncClient(timeout=30.0)
 
+    async def __aenter__(self):
+        """Вход в контекстный менеджер"""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Выход из контекстного менеджера"""
+        await self.close()
+
     async def send_notification(
         self, message: str, reference_id: str, idempotency_key: str
     ) -> bool:
-        """
-        Отправить уведомление в Capashino.
-
-        Args:
-            message: Текст уведомления
-            reference_id: Идентификатор (ticket_id)
-            idempotency_key: Ключ идемпотентности
-
-        Returns:
-            bool: True если успешно, False если ошибка
-        """
+        """Отправить уведомление в Capashino"""
         url = f"{self._base_url}/api/notifications"
 
         payload = {
